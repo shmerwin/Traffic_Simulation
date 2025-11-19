@@ -1,4 +1,5 @@
 import org.eclipse.sumo.libtraci.*;
+import wrapper.VehicleWrapper;
 
 public class Main {
     public static void main(String[] args) {
@@ -31,6 +32,10 @@ public class Main {
 
             System.out.println("found traffic lights: " + TrafficLight.getIDList().size());
             Simulation.close();
+
+
+
+
 
         } catch (Exception e) {
             e.printStackTrace();
