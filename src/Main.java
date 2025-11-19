@@ -17,7 +17,6 @@ public class Main {
             }
 
 
-
             String libPath = sumoHome + File.separator + "bin" + File.separator + "libtracijni.dll";
 
             File libFile = new File(libPath);
@@ -50,9 +49,11 @@ public class Main {
             Simulation.start(argsVector);
             System.out.println("SUMO successfully started");
 
-            for (int i = 0; i < 5; i++) {
+
+            for (int i = 0; i < 1000; i++) {
                 Simulation.step();
-                System.out.println("Step " + i);
+                StringVector vehicles = Vehicle.getIDList();
+                System.out.println("Step " + i + " vehicles: " + vehicles);
             }
 
 
