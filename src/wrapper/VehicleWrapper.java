@@ -27,8 +27,4 @@ public class VehicleWrapper {
         return Vehicle.getPosition(id);
     }
 
-    @Override
-    public String toString() {
-        return "Vehicle[" + id + "]";
-    }
 }
