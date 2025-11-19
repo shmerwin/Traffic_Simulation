@@ -56,7 +56,7 @@ public class Main {
                 System.out.println("Step " + i + " vehicles: " + vehicles);
             }
 
-
+            // prints out traffic lights
             System.out.println("found traffic lights: " + TrafficLight.getIDList().size());
 
             Simulation.close();
