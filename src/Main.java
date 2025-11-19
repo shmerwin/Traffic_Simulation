@@ -50,7 +50,7 @@ public class Main {
             System.out.println("SUMO successfully started");
 
 
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 1000; i++) { //1000 statt 5
                 Simulation.step();
                 StringVector vehicles = Vehicle.getIDList();
                 System.out.println("Step " + i + " vehicles: " + vehicles);
