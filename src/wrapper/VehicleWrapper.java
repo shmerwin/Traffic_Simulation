@@ -20,7 +20,7 @@ public class VehicleWrapper {
     public double getSpeed() throws Exception {
         return (double) conn.do_job_get(Vehicle.getSpeed(id));
     }
-
+    // for seeing on which road which car is
     public String getRoadId() throws Exception {
         return (String) conn.do_job_get(Vehicle.getRoadID(id));
     }

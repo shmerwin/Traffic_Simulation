@@ -16,12 +16,12 @@ public class TrafficLightWrapper {
     public String getId() {
         return id;
     }
-
+    // shows current state of light
     public String getState() throws Exception {
         return (String) conn.do_job_get(Trafficlight.getRedYellowGreenState(id));
     }
-
-    public void setPhaseIndex(int index) throws Exception {
-        conn.do_job_set(Trafficlight.setPhase(id, index));
+    // phase is the order of states
+    public void getPhase(int index) throws Exception {
+        conn.do_job_set(Trafficlight.getPhase(id));
     }
 }
