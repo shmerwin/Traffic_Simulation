@@ -1,44 +1,34 @@
-import org.eclipse.sumo.libtraci.*;
+import it.polito.appeal.traci.SumoTraciConnection;
+import de.tudresden.sumo.cmd.Vehicle;
+import de.tudresden.sumo.objects.SumoStringList;
 import wrapper.VehicleWrapper;
 
 public class Main {
-    public static void main(String[] args) {
 
-        try {
-            Simulation.preloadLibraries();
-        } catch (UnsatisfiedLinkError e) {
-            System.err.println("Could not load libtraci native library.");
-            e.printStackTrace();
-            return;
-        }
+    public static void main(String[] args) throws Exception {
 
-        //heyy david
+        String sumoBin = "sumo";
+        String config = "sumofiles/quickstart.sumocfg";
 
+        SumoTraciConnection conn = new SumoTraciConnection(sumoBin, config);
+        conn.runServer();
 
-        try {
-            StringVector argsVector = new StringVector();
-            argsVector.add("sumo");
-            argsVector.add("-c");
-            argsVector.add("sumofiles/quickstart.sumocfg");
+        System.out.println("SUMO started");
 
-            Simulation.start(argsVector);
-            System.out.println("SUMO successfully started");
+        for (int i = 0; i < 10; i++) {
+            conn.do_timestep();
 
-            for (int i = 0; i < 1000; i++) {
-                Simulation.step();
-                StringVector vehicles = Vehicle.getIDList();
-                System.out.println("Step " + i + " vehicles: " + vehicles);
+            SumoStringList vehicleList = (SumoStringList) conn.do_job_get(Vehicle.getIDList());
+
+            if (!vehicleList.isEmpty()) {
+                String carId = vehicleList.get(0);
+                VehicleWrapper myCar = new VehicleWrapper(carId, conn);
+
+                System.out.println("Step " + i + ": Speed=" + myCar.getSpeed());
             }
-
-            System.out.println("found traffic lights: " + TrafficLight.getIDList().size());
-            Simulation.close();
-
-
-
-
-
-        } catch (Exception e) {
-            e.printStackTrace();
         }
+
+        conn.close();
+        System.out.println("Simulation beendet.");
     }
 }
