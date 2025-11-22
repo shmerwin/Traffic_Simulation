@@ -3,11 +3,15 @@ import it.polito.appeal.traci.SumoTraciConnection;
 import de.tudresden.sumo.cmd.Vehicle;
 import de.tudresden.sumo.objects.SumoStringList;
 
+import wrapper.VehicleWrapper;
+
+
+
 public class Main {
 
     public static void main(String[] args) throws Exception {
         // arguments for connection
-        String sumo = "sumo";
+        String sumo = "sumo-gui";
         String config = "sumofiles/test123.sumocfg";
 
         SumoTraciConnection conn = new SumoTraciConnection(sumo, config);
@@ -37,7 +41,10 @@ public class Main {
         double totalSpeed = 0;
 
         for (String carId : vehicleList) {
-            double speed = (double) conn.do_job_get(Vehicle.getSpeed(carId));
+            //creates instances for every carId
+            VehicleWrapper car = new VehicleWrapper(carId, conn);
+            double speed = car.getSpeed();
+
             totalSpeed += speed;
 
         }
@@ -48,7 +55,7 @@ public class Main {
 
         System.out.println("Report for Step " + step + "\n" +
                 "Active cars " + count + "\n" +
-                "Avergae Speed: " + avgSpeed + "m/s\n" + " Traffic Lights passed: " + "\n\n" );
+                "Avergae Speed: " + avgSpeed + "m/s\n" + " Traffic Lights passed: " +"\n\n" );
 
     }
 }
