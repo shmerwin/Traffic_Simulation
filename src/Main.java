@@ -7,7 +7,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         // arguments for connection
         String sumo = "sumo-gui";
-        String config = "sumofiles/test1.sumocfg";
+        String config = "sumofiles/test123.sumocfg";
 
         SumoTraciConnection conn = new SumoTraciConnection(sumo, config);
         // starts connection
@@ -22,7 +22,7 @@ public class Main {
         }
 
         conn.close();
-        System.out.println("Simulation beendet.");
+        System.out.println("Simulation finished");
     }
     // defining method for checking the traffic on all cars
     private static void analyzeTraffic(SumoTraciConnection conn, int step) throws Exception {
