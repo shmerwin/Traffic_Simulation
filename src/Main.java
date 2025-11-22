@@ -7,7 +7,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         // arguments for connection
         String sumo = "sumo-gui";
-        String config = "sumofiles/fberg.sumocfg";
+        String config = "sumofiles/test1.sumocfg";
 
         SumoTraciConnection conn = new SumoTraciConnection(sumo, config);
         // starts connection
@@ -24,7 +24,7 @@ public class Main {
         conn.close();
         System.out.println("Simulation beendet.");
     }
-
+    // defining method for checking the traffic on all cars
     private static void analyzeTraffic(SumoTraciConnection conn, int step) throws Exception {
         // uses static list of vehicles instead of instances
         SumoStringList vehicleList = (SumoStringList) conn.do_job_get(Vehicle.getIDList());
