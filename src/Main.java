@@ -1,3 +1,4 @@
+import de.tudresden.sumo.cmd.Trafficlight;
 import it.polito.appeal.traci.SumoTraciConnection;
 import de.tudresden.sumo.cmd.Vehicle;
 import de.tudresden.sumo.objects.SumoStringList;
@@ -6,7 +7,7 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         // arguments for connection
-        String sumo = "sumo-gui";
+        String sumo = "sumo";
         String config = "sumofiles/test123.sumocfg";
 
         SumoTraciConnection conn = new SumoTraciConnection(sumo, config);
@@ -20,6 +21,9 @@ public class Main {
                 analyzeTraffic(conn, i);
             }
         }
+        // just counts how many trafficlights there are on the map
+        int TrafficlightCount = (int) conn.do_job_get(Trafficlight.getIDCount());
+        System.out.printf("Trafficlight Count: %d\n", TrafficlightCount);
 
         conn.close();
         System.out.println("Simulation finished");
@@ -38,11 +42,13 @@ public class Main {
 
         }
 
+
+
         double avgSpeed = totalSpeed / count;
 
         System.out.println("Report for Step " + step + "\n" +
                 "Active cars " + count + "\n" +
-                "Avergae Speed: " + avgSpeed + "m/s\n\n" );
+                "Avergae Speed: " + avgSpeed + "m/s\n" + " Traffic Lights passed: " + "\n\n" );
 
     }
 }
