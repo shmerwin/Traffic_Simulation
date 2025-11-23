@@ -21,7 +21,7 @@ public class TrafficLightWrapper {
         return (String) conn.do_job_get(Trafficlight.getRedYellowGreenState(id));
     }
     // phase is the order of states
-    public void getPhase(int index) throws Exception {
-        conn.do_job_set(Trafficlight.getPhase(id));
+    public int getPhase(int index) throws Exception {
+        return (int) conn.do_job_get(Trafficlight.getPhase(id));
     }
 }
