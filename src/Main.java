@@ -29,7 +29,7 @@ public class Main {
         // starts connection
         conn.runServer();
 
-        for (int i = 0; i < 5000; i++) { // runs simulation for i steps
+        for (int i = 0; i < 1001; i++) { // runs simulation for i steps
             conn.do_timestep();
             // get list of all current car ids from sumo
             SumoStringList currentIds = (SumoStringList) conn.do_job_get(Vehicle.getIDList());
@@ -89,8 +89,8 @@ public class Main {
         }
 
         // calculate average
-        double avgSpeed = totalSpeed / count;
+        double avgSpeed = totalSpeed / count * 3.6;
 
-        log.info("Report for step " + step + ": " + "total cars: " + count + "average speed: " + avgSpeed);
+        log.info("Report for step " + step + ":" + " total cars: " + count + ", average speed: " + avgSpeed + "km/h");
     }
 }
