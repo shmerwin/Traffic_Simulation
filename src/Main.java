@@ -8,8 +8,6 @@ import java.util.logging.Logger;
 
 import wrapper.VehicleWrapper;
 
-
-
 public class Main {
 
     private static final Logger log = Logger.getLogger(Main.class.getName());
@@ -24,7 +22,7 @@ public class Main {
      */
     public static void main(String[] args) throws Exception {
         // arguments for connection
-        String sumo = "sumo-gui";
+        String sumo = "sumo";
         String config = "sumofiles/frankfurt_city.sumocfg";
         SumoTraciConnection conn = new SumoTraciConnection(sumo, config);
 
