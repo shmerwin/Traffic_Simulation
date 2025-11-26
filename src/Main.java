@@ -39,7 +39,7 @@ public class Main {
 
             // to have not so many reports we only use the method every 100 steps
             if (i % 100 == 0) {
-                analyzeTraffic(conn, i);
+                analyzeTraffic(i);
             }
         }
         // just counts how many trafficlights there are on the map
@@ -70,11 +70,10 @@ public class Main {
 
     /**
      * Method for analyzing traffic and reporting the average speed
-     * @param conn The connection going on right now for the simulation
      * @param step Makes the report for said step
      * @throws Exception if you cannot get any data
      */
-    private static void analyzeTraffic(SumoTraciConnection conn, int step) throws Exception {
+    private static void analyzeTraffic(int step) throws Exception {
 
         int count = activeVehicles.size();
 
@@ -85,9 +84,7 @@ public class Main {
             //System.out.println(car.getId());
 
             totalSpeed += car.getSpeed();
-
         }
-
         // calculate average
         double avgSpeed = totalSpeed / count * 3.6;
 
