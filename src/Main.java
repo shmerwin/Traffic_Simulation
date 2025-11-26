@@ -2,17 +2,26 @@ import de.tudresden.sumo.cmd.Trafficlight;
 import it.polito.appeal.traci.SumoTraciConnection;
 import de.tudresden.sumo.cmd.Vehicle;
 import de.tudresden.sumo.objects.SumoStringList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
 
 import wrapper.VehicleWrapper;
 
-import java.util.HashMap;
-import java.util.Map;
 
 
 public class Main {
+
+    private static final Logger log = Logger.getLogger(Main.class.getName());
     // map to save our vehicle objects so they dont get lost
     private static final Map<String, VehicleWrapper> activeVehicles = new HashMap<>();
 
+    /**
+     * Starts the simulation and the connection to sumo and
+     * executes the methods for reporting and saving cars
+     * @param args command line arguments
+     * @throws Exception if the connection to sumo fails
+     */
     public static void main(String[] args) throws Exception {
         // arguments for connection
         String sumo = "sumo";
@@ -24,7 +33,6 @@ public class Main {
 
         for (int i = 0; i < 5000; i++) { // runs simulation for i steps
             conn.do_timestep();
-
             // get list of all current car ids from sumo
             SumoStringList currentIds = (SumoStringList) conn.do_job_get(Vehicle.getIDList());
 
@@ -38,13 +46,16 @@ public class Main {
         }
         // just counts how many trafficlights there are on the map
         int TrafficlightCount = (int) conn.do_job_get(Trafficlight.getIDCount());
-        System.out.printf("Trafficlight Count: %d\n", TrafficlightCount);
-
+        log.info("Trafficlight Count: " + TrafficlightCount);
         conn.close();
-        System.out.println("Simulation finished");
+        log.info("SumoTraciConnection Closed");
     }
 
-    // updates Vehicle list in every iteration to retain oop structure
+    /**
+     * Is a method for updating the Hashmap outside of the main for storing cars
+     * @param Ids List of vehicle Ids that are present in the simulation
+     * @param conn The active sumo connection for making new instances of the wrapper
+     */
     private static void updateVehicleList(SumoStringList Ids, SumoTraciConnection conn) {
         // loop through all ids from sumo
         for (String id : Ids) {
@@ -59,7 +70,12 @@ public class Main {
         activeVehicles.keySet().retainAll(Ids);
     }
 
-    // defining method for checking the traffic on all cars
+    /**
+     * Method for analyzing traffic and reporting the average speed
+     * @param conn The connection going on right now for the simulation
+     * @param step Makes the report for said step
+     * @throws Exception if you cannot get any data
+     */
     private static void analyzeTraffic(SumoTraciConnection conn, int step) throws Exception {
 
         int count = activeVehicles.size();
@@ -68,7 +84,7 @@ public class Main {
         // loop through all our car objects in the map
         for (VehicleWrapper car : activeVehicles.values()) {
             // prints id to console
-            System.out.println(car.getId());
+            //System.out.println(car.getId());
 
             totalSpeed += car.getSpeed();
 
@@ -77,9 +93,6 @@ public class Main {
         // calculate average
         double avgSpeed = totalSpeed / count;
 
-        System.out.println("Report for Step " + step + "\n" +
-                "Active cars " + count + "\n" +
-                "Avergae Speed: " + avgSpeed + "m/s\n" +"\n\n" );
-
+        log.info("Report for step " + step + ": " + "total cars: " + count + "average speed: " + avgSpeed);
     }
 }
