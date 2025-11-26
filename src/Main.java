@@ -24,8 +24,8 @@ public class Main {
      */
     public static void main(String[] args) throws Exception {
         // arguments for connection
-        String sumo = "sumo";
-        String config = "sumofiles/test123.sumocfg";
+        String sumo = "sumo-gui";
+        String config = "sumofiles/frankfurt_city.sumocfg";
         SumoTraciConnection conn = new SumoTraciConnection(sumo, config);
 
         // starts connection
