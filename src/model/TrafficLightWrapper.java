@@ -1,4 +1,4 @@
-package wrapper;
+package model;
 
 import de.tudresden.sumo.cmd.Trafficlight;
 import it.polito.appeal.traci.SumoTraciConnection;

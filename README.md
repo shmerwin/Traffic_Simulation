@@ -36,7 +36,7 @@ Installation
 ------
 How to Run
 
-    Navigate to the file src/Main.java.
+    Navigate to the file src/controller.Main.java.
 
     Run the main method.
 
@@ -57,9 +57,9 @@ Project Structure
 
     src/: Contains the Java source code.
 
-        Main.java: The entry point of the application.
+        controller.Main.java: The entry point of the application.
 
-        wrapper/: Contains classes for Vehicles, Traffic Lights, and Edges.
+        model/: Contains classes for Vehicles, Traffic Lights, and Edges.
 
     sumofiles/: Contains the SUMO network and route files.
 

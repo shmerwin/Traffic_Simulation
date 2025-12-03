@@ -1,3 +1,5 @@
+package controller;
+
 import de.tudresden.sumo.cmd.Trafficlight;
 import it.polito.appeal.traci.SumoTraciConnection;
 import de.tudresden.sumo.cmd.Vehicle;
@@ -6,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import wrapper.VehicleWrapper;
+import model.VehicleWrapper;
 
 public class Main {
 
@@ -52,14 +54,14 @@ public class Main {
     /**
      * Is a method for updating the Hashmap outside of the main for storing cars
      * @param Ids List of vehicle Ids that are present in the simulation
-     * @param conn The active sumo connection for making new instances of the wrapper
+     * @param conn The active sumo connection for making new instances of the model
      */
     private static void updateVehicleList(SumoStringList Ids, SumoTraciConnection conn) {
         // loop through all ids from sumo
         for (String id : Ids) {
             // check if we already have this car in our map
             if (!activeVehicles.containsKey(id)) {
-                // if not create new wrapper and put it in map
+                // if not create new model and put it in map
                 VehicleWrapper newCar = new VehicleWrapper(id, conn);
                 activeVehicles.put(id, newCar);
             }
