@@ -1,7 +1,11 @@
 package model;
 
 import de.tudresden.sumo.cmd.Vehicle;
+import de.tudresden.sumo.objects.SumoColor;
+import de.tudresden.sumo.objects.SumoPosition2D;
 import it.polito.appeal.traci.SumoTraciConnection;
+
+import java.awt.Color;
 
 /**
  * Wrapper for a vehicle in the sumo connection
@@ -11,6 +15,10 @@ public class VehicleWrapper {
 
     private final String id;
     private final SumoTraciConnection conn;
+    private double x, y, angle, speed;
+    private double length, width;
+    private Color color;
+
 
     /**
      * Instanciates a new VehicleWrapper object
@@ -20,20 +28,56 @@ public class VehicleWrapper {
     public VehicleWrapper(String id, SumoTraciConnection conn) {
         this.id = id;
         this.conn = conn;
-    }
-
-    public String getId() {
-        return id;
+        fetchStaticData();
     }
 
     /**
-     * Method for retrieving vehicle speed
-     * @return speed of a specific vehicle
-     * @throws Exception if data cannot be retrieved
+     *Methode to retrieve and assign color,length and width of the vehicle from sumo
+     * in case of communication failure default values are set.
      */
-    public double getSpeed() throws Exception {
-        return (double) conn.do_job_get(Vehicle.getSpeed(id));
+    private void fetchStaticData() {
+        try {
+            SumoColor sc = (SumoColor) conn.do_job_get(Vehicle.getColor(id));
+            int r = RGBLimiter(sc.r); int g = RGBLimiter(sc.g); int b = RGBLimiter(sc.b);
+            this.color = new Color(r, g, b);
+            this.length = (double) conn.do_job_get(Vehicle.getLength(id));
+            this.width = (double) conn.do_job_get(Vehicle.getWidth(id));
+        } catch (Exception e) {
+            this.color = Color.YELLOW;
+            this.length = 5.0; this.width = 2.0;
+        }
     }
+
+    /**
+     * Method to limit RGB values to 255
+     * @param val value for RGB
+     * @return an RGB value that does not exceed 255
+     */
+    private int RGBLimiter(int val) { return Math.max(0, Math.min(255, val)); }
+
+    /**
+     * Method to retrieve the position and speed of the vehicle
+     */
+
+    public void updateData() {
+        try {
+            SumoPosition2D pos = (SumoPosition2D) conn.do_job_get(Vehicle.getPosition(id));
+            this.x = pos.x; this.y = pos.y;
+            this.angle = (double) conn.do_job_get(Vehicle.getAngle(id));
+            this.speed = (double) conn.do_job_get(Vehicle.getSpeed(id));
+        } catch (Exception e) {}
+    }
+
+
+
+    public String getId() { return id;}
+    public double getX() { return x; }
+    public double getY() { return y; }
+    public double getAngle() { return angle; }
+    public double getSpeed() { return speed; }
+    public double getLength() { return length; }
+    public double getWidth() { return width; }
+    public Color getColor() { return color; }
 
     /**
      * Method for seeing on which road which car is
