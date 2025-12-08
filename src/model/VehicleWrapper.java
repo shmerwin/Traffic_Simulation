@@ -87,4 +87,5 @@ public class VehicleWrapper {
     public String getRoadId() throws Exception {
         return (String) conn.do_job_get(Vehicle.getRoadID(id));
     }
+
 }
