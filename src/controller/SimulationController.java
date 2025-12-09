@@ -16,8 +16,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * Controller that handles the simulation and connection to sumo.
- * Simplified for console-only testing.
+ * Controller that handles the simulation and connection to sumo
  */
 public class SimulationController {
 
@@ -37,7 +36,7 @@ public class SimulationController {
     }
 
     /**
-     * Connects to SUMO and runs the simulation loop directly.
+     * Connects to SUMO and runs the simulation loop directly
      */
     public void runConsoleSimulation() {
         try {
@@ -152,4 +151,36 @@ public class SimulationController {
             e.printStackTrace();
         }
     }
+
+    private double MinX = 0;
+    private double MaxY = 1000;
+
+    public void play() {
+
+    }
+
+    public void pause() {
+
+    }
+
+    public void setSpeedMultiplier(int val) {
+    }
+
+    public double getMapWidth() { return 1000.0; }
+    public double getMapHeight() { return 1000.0; }
+    public double getMapMinX() { return MinX; }
+    public double getMapMaxY() { return MaxY; }
+
+    public java.util.List<EdgeWrapper> getMapEdges() {
+        return mapEdges;
+    }
+
+    public java.util.Map<String, VehicleWrapper> getActiveVehicles() {
+        return activeVehicles;
+    }
+
+    public java.util.Map<String, TrafficLightWrapper> getTrafficLights() {
+        return trafficLights;
+    }
+
 }
