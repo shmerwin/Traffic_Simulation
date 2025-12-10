@@ -25,4 +25,9 @@ public class MainFrame extends JFrame {
         setVisible(true);
     }
 
+    public void refresh() {
+        if  (mapPanel != null) {
+            mapPanel.repaint();
+        }
+    }
 }
