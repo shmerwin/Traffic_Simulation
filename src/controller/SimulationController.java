@@ -1,13 +1,15 @@
 package controller;
 
-import de.tudresden.sumo.cmd.Lane;
-import de.tudresden.sumo.cmd.Trafficlight;
-import de.tudresden.sumo.cmd.Vehicle;
+import de.tudresden.sumo.cmd.*;
+import de.tudresden.sumo.objects.SumoBoundingBox;
+import de.tudresden.sumo.objects.SumoGeometry;
+import de.tudresden.sumo.objects.SumoPosition2D;
 import de.tudresden.sumo.objects.SumoStringList;
 import it.polito.appeal.traci.SumoTraciConnection;
 import model.EdgeWrapper;
 import model.TrafficLightWrapper;
 import model.VehicleWrapper;
+import view.MainFrame;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,9 +28,25 @@ public class SimulationController {
     private final Map<String, TrafficLightWrapper> trafficLights = new HashMap<>();
     private final List<EdgeWrapper> mapEdges = new ArrayList<>();
 
+    // history for the statistics panel later
+    private final List<Double> speedHistory = new ArrayList<>();
+    private double currentAvgSpeed = 0.0;
+    private final int maxHistoryPoints = 200;
+
     private SumoTraciConnection conn;
     private final String sumo;
     private final String config;
+
+    // simulation state
+    private boolean isRunning = false;
+    private boolean isPaused = true;
+    private Thread simThread;
+    private int simDelay = 100;
+
+    private MainFrame view;
+
+    // dynamic map boundaries
+    private double mapMinX, mapMinY, mapMaxX, mapMaxY;
 
     public SimulationController(String sumo, String config) {
         this.sumo = sumo;
@@ -36,28 +54,39 @@ public class SimulationController {
     }
 
     /**
-     * Connects to SUMO and runs the simulation loop directly
+     * connects the view to the controller
+     * @param view the mainframe
      */
-    public void runConsoleSimulation() {
+    public void setView(MainFrame view) {
+        this.view = view;
+    }
+
+    /**
+     * Connects to SUMO and starts the simulation thread
+     */
+    public void startConnection() {
         try {
+            if (conn == null) {
+                conn = new SumoTraciConnection(sumo, config);
+                conn.runServer();
+                isRunning = true;
 
-            conn = new SumoTraciConnection(sumo, config);
-            conn.runServer();
-            loadStaticMapData();
-
-            for (int step = 1; step <= 1000; step++) {
-
-                conn.do_timestep();
-                // Get current data from SUMO
-                refreshData(step);
-
-                // Print report every 100 steps
-                if (step % 100 == 0) {
-                    analyzeTraffic(step);
+                // calculate map bounds from sumo
+                Object Bounds = conn.do_job_get(Simulation.getNetBoundary());
+                if (Bounds instanceof SumoBoundingBox) {
+                    SumoBoundingBox bbox = (SumoBoundingBox) Bounds;
+                    this.mapMinX = bbox.x_min; this.mapMinY = bbox.y_min;
+                    this.mapMaxX = bbox.x_max; this.mapMaxY = bbox.y_max;
+                } else if (Bounds instanceof SumoGeometry) {
+                    calculateBoundsFromGeometry((SumoGeometry) Bounds);
                 }
-            }
-            stop();
 
+                loadStaticMapData();
+
+                // start the loop in a separate thread so gui doesnt freeze
+                simThread = new Thread(this::simulationLoop);
+                simThread.start();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -75,6 +104,39 @@ public class SimulationController {
             trafficLights.put(id, new TrafficLightWrapper(id, conn));
         }
         log.info("Data loaded: " + mapEdges.size() + " Edges, " + trafficLights.size() + " Traffic Lights.");
+    }
+
+    /**
+     * main loop that runs the simulation in the background
+     */
+    private void simulationLoop() {
+        int step = 0;
+        while (isRunning) {
+            try {
+                if (!isPaused) {
+                    conn.do_timestep();
+                    step++;
+
+                    // Get current data from SUMO
+                    refreshData(step);
+                    calculateStatistics();
+
+                    // Print report every 100 steps (console log)
+                    if (step % 100 == 0) {
+                        analyzeTraffic(step);
+                    }
+
+                    // update the gui if it exists
+                    if (view != null) {
+                        javax.swing.SwingUtilities.invokeLater(() -> view.refresh());
+                    }
+                }
+                Thread.sleep(simDelay);
+            } catch (Exception e) {
+                e.printStackTrace();
+                stop();
+            }
+        }
     }
 
     private void refreshData(int step) throws Exception {
@@ -103,6 +165,25 @@ public class SimulationController {
         }
     }
 
+    /**
+     * calculates simple stats for the history graph
+     */
+    private void calculateStatistics() {
+        if (activeVehicles.isEmpty()) {
+            currentAvgSpeed = 0.0;
+        } else {
+            double totalSpeed = 0;
+            for (VehicleWrapper car : activeVehicles.values()) {
+                totalSpeed += car.getSpeed();
+            }
+            currentAvgSpeed = (totalSpeed / activeVehicles.size()) * 3.6;
+        }
+        speedHistory.add(currentAvgSpeed);
+        if (speedHistory.size() > maxHistoryPoints) {
+            speedHistory.remove(0);
+        }
+    }
+
     private void analyzeTraffic(int step) {
         try {
             int count = activeVehicles.size();
@@ -124,7 +205,7 @@ public class SimulationController {
 
             double avgSpeed = (totalSpeed / count) * 3.6; // m/s to km/h
 
-            // Find top road
+            // Find most used road
             String topRoad = "";
             int maxRoad = 0;
             for (Map.Entry<String, Integer> entry : roadCounts.entrySet()) {
@@ -142,7 +223,36 @@ public class SimulationController {
         }
     }
 
+    /**
+     * adds a new vehicle to sumo
+     */
+    public void spawnVehicle(String id, String type, String route) {
+        if (conn == null) return;
+        try {
+            double randomPos = 5.0 + (Math.random() * 35.0);
+            double startSpeed = 3.0;
+            // 0.0 is the depart time (now)
+            conn.do_job_set(Vehicle.add(id, type, route, 0, randomPos, startSpeed, (byte) 0));
+            log.info("Spawned new vehicle: " + id);
+        } catch (Exception e) {
+            log.severe("Error spawning vehicle: " + e.getMessage());
+        }
+    }
+
+    // helper to calculate bounds if sumo returns geometry
+    private void calculateBoundsFromGeometry(SumoGeometry geom) {
+        if (geom.coords == null || geom.coords.isEmpty()) return;
+        double minX = Double.MAX_VALUE; double minY = Double.MAX_VALUE;
+        double maxX = Double.MIN_VALUE; double maxY = Double.MIN_VALUE;
+        for (SumoPosition2D pos : geom.coords) {
+            if (pos.x < minX) minX = pos.x; if (pos.y < minY) minY = pos.y;
+            if (pos.x > maxX) maxX = pos.x; if (pos.y > maxY) maxY = pos.y;
+        }
+        this.mapMinX = minX; this.mapMinY = minY; this.mapMaxX = maxX; this.mapMaxY = maxY;
+    }
+
     public void stop() {
+        isRunning = false;
         try {
             if (conn != null && !conn.isClosed()) {
                 conn.close();
@@ -152,35 +262,48 @@ public class SimulationController {
         }
     }
 
-    private double MinX = 0;
-    private double MaxY = 1000;
-
+    // control methods for the gui
     public void play() {
-
+        if (conn == null) startConnection();
+        isPaused = false;
     }
 
     public void pause() {
-
+        isPaused = true;
     }
 
-    public void setSpeedMultiplier(int val) {
+    public void setSpeedMultiplier(int value) {
+        if (value > 0) this.simDelay = 500 / value;
     }
 
-    public double getMapWidth() { return 1000.0; }
-    public double getMapHeight() { return 1000.0; }
-    public double getMapMinX() { return MinX; }
-    public double getMapMaxY() { return MaxY; }
-
-    public java.util.List<EdgeWrapper> getMapEdges() {
-        return mapEdges;
+    // getters for lists
+    public List<String> getRouteList() {
+        try {
+            SumoStringList list = (SumoStringList) conn.do_job_get(Route.getIDList());
+            return new ArrayList<>(list);
+        } catch (Exception e) { return new ArrayList<>(); }
     }
 
-    public java.util.Map<String, VehicleWrapper> getActiveVehicles() {
-        return activeVehicles;
+    public List<String> getVehicleTypeList() {
+        try {
+            SumoStringList list = (SumoStringList) conn.do_job_get(Vehicletype.getIDList());
+            return new ArrayList<>(list);
+        } catch (Exception e) { return new ArrayList<>(); }
     }
 
-    public java.util.Map<String, TrafficLightWrapper> getTrafficLights() {
-        return trafficLights;
-    }
+    // getters
+    public double getMapWidth() { return mapMaxX - mapMinX; }
+    public double getMapHeight() { return mapMaxY - mapMinY; }
+    public double getMapMaxX() { return mapMaxX; }
+    public double getMapMinX() { return mapMinX; }
+    public double getMapMaxY() { return mapMaxY; }
+    public double getMapMinY() { return mapMinY; }
+
+    public double getCurrentAvgSpeed() { return currentAvgSpeed; }
+    public List<Double> getSpeedHistory() { return new ArrayList<>(speedHistory); }
+
+    public java.util.List<EdgeWrapper> getMapEdges() { return mapEdges; }
+    public java.util.Map<String, VehicleWrapper> getActiveVehicles() { return activeVehicles; }
+    public java.util.Map<String, TrafficLightWrapper> getTrafficLights() {return trafficLights; }
 
 }
