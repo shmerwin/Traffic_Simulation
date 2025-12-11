@@ -8,27 +8,91 @@ import model.VehicleWrapper;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Path2D;
+import java.awt.event.*;
+import java.awt.geom.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * panel responsible for rendering the simulation map
+ * draws edges, vehicles and traffic lights
+ * includes zoom and pan functionality
+ */
 public class MapPanel extends JPanel {
 
     private SimulationController controller;
 
+    // colors
+    private static final Color COLOR_BACKGROUND = new Color(30, 30, 30);
+    private static final Color COLOR_ROAD = Color.LIGHT_GRAY;
+
+    // navigation state
+    private double zoom = 1.0;
+    private double camX = 0;
+    private double camY = 0;
+    private boolean firstLoad = true;
+    private Point lastMousePt;
+
     public MapPanel() {
-        setBackground(new Color(30, 30, 30));
+        // set dark background color
+        setBackground(COLOR_BACKGROUND);
+
+        // mouse handling for zoom and pan
+        MouseAdapter mouseHandler = new MouseAdapter() {
+            @Override
+            public void mouseWheelMoved(MouseWheelEvent e) {
+                double factor = 1.1;
+                if (e.getWheelRotation() > 0) {
+                    zoom /= factor;
+                } else {
+                    zoom *= factor;
+                }
+                repaint();
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                lastMousePt = e.getPoint();
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (lastMousePt != null) {
+                    double dx = e.getX() - lastMousePt.x;
+                    double dy = e.getY() - lastMousePt.y;
+
+                    // adjust camera position
+                    camX -= dx / getScale();
+                    camY += dy / getScale();
+
+                    lastMousePt = e.getPoint();
+                    repaint();
+                }
+            }
+        };
+
+        addMouseListener(mouseHandler);
+        addMouseMotionListener(mouseHandler);
+        addMouseWheelListener(mouseHandler);
     }
 
+    /**
+     * sets the controller reference needed for data access
+     * @param controller the simulation controller
+     */
     public void setController(SimulationController controller) {
         this.controller = controller;
+    }
+
+    private double getScale() {
+        return 5.0 * zoom;
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
+        // check if controller is ready
         if (controller == null) {
             g.setColor(Color.WHITE);
             g.drawString("Waiting for Controller...", 20, 20);
@@ -36,101 +100,146 @@ public class MapPanel extends JPanel {
         }
 
         Graphics2D g2d = (Graphics2D) g;
+        // enable antialiasing for smoother drawing
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         double mapWidth = controller.getMapWidth();
         double mapHeight = controller.getMapHeight();
 
+        // check if map is loaded
         if (mapWidth == 0 || mapHeight == 0) {
             g.setColor(Color.WHITE);
             g.drawString("Press Play to load Map...", 20, 20);
             return;
         }
 
-        double panelWidth = getWidth();
-        double panelHeight = getHeight();
-        double scaleX = panelWidth / mapWidth;
-        double scaleY = panelHeight / mapHeight;
-        double scale = Math.min(scaleX, scaleY) * 0.95;
-        double offsetX = (panelWidth - (mapWidth * scale)) / 2;
-        double offsetY = (panelHeight - (mapHeight * scale)) / 2;
+        // auto center on first load
+        if (firstLoad) {
+            camX = controller.getMapMinX() + (mapWidth / 2.0);
+            camY = controller.getMapMinY() + (mapHeight / 2.0);
 
+            double scaleX = getWidth() / mapWidth;
+            double scaleY = getHeight() / mapHeight;
 
+            // simple if else for min scale
+            if (scaleX < scaleY) {
+                zoom = scaleX * 0.9 / 5.0;
+            } else {
+                zoom = scaleY * 0.9 / 5.0;
+            }
+
+            firstLoad = false;
+        }
+
+        // save old transform to restore later
+        AffineTransform oldTransform = g2d.getTransform();
+        AffineTransform tx = new AffineTransform();
+
+        // center on screen
+        tx.translate(getWidth() / 2.0, getHeight() / 2.0);
+
+        // apply scale and flip y axis
+        double s = getScale();
+        tx.scale(s, -s);
+
+        // move camera to position
+        tx.translate(-camX, -camY);
+
+        g2d.setTransform(tx);
+
+        // draw map edges (roads)
         List<EdgeWrapper> edges = controller.getMapEdges();
         if (edges != null) {
-            g2d.setColor(Color.LIGHT_GRAY);
+            g2d.setColor(COLOR_ROAD);
             for (EdgeWrapper edge : edges) {
-                drawEdge(g2d, edge, scale, offsetX, offsetY);
+                drawEdge(g2d, edge);
             }
         }
 
+        // draw vehicles
         Map<String, VehicleWrapper> vehicles = controller.getActiveVehicles();
         for (VehicleWrapper car : vehicles.values()) {
-            drawVehicle(g2d, car, scale, offsetX, offsetY);
+            drawVehicle(g2d, car);
         }
 
+        // draw traffic lights
         Map<String, TrafficLightWrapper> lights = controller.getTrafficLights();
         if (lights != null) {
             for (TrafficLightWrapper tls : lights.values()) {
                 for (TrafficLightWrapper.SignalPoint signal : tls.getSignalPoints()) {
-                    drawSignal(g2d, signal, scale, offsetX, offsetY);
+                    drawSignal(g2d, signal, s);
                 }
             }
         }
 
+        // restore transform for hud
+        g2d.setTransform(oldTransform);
+
+        // debug info
         g2d.setColor(Color.WHITE);
-        g2d.drawString("Autos: " + vehicles.size() + " | Straßen: " + (edges != null ? edges.size() : 0), 10, 20);
+
+        int edgeCount = 0;
+        if (edges != null) {
+            edgeCount = edges.size();
+        }
+
+        g2d.drawString("Cars: " + vehicles.size() + " | Streets: " + edgeCount, 20, 30);
+        g2d.drawString("Zoom: " + String.format("%.2f", zoom), 20, 50);
     }
 
-    private void drawEdge(Graphics2D g2, EdgeWrapper edge, double scale, double offX, double offY) {
+    /**
+     * helper to draw a single road edge
+     */
+    private void drawEdge(Graphics2D g2, EdgeWrapper edge) {
         List<SumoPosition2D> points = edge.getShapePoints();
-        if (points.isEmpty()) return;
+        if (points.isEmpty()) {
+            return;
+        }
 
         Path2D path = new Path2D.Double();
         boolean first = true;
         for (SumoPosition2D p : points) {
-            double screenX = offX + ((p.x - controller.getMapMinX()) * scale);
-            double screenY = offY + ((controller.getMapMaxY() - p.y) * scale);
-            if (first) { path.moveTo(screenX, screenY); first = false; } else { path.lineTo(screenX, screenY); }
+            if (first) {
+                path.moveTo(p.x, p.y);
+                first = false;
+            } else {
+                path.lineTo(p.x, p.y);
+            }
         }
-        float strokeWidth = (float) Math.max(1.0, edge.getWidth() * scale);
-        g2.setStroke(new BasicStroke(strokeWidth));
+
+        float width = (float) edge.getWidth();
+        g2.setStroke(new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         g2.draw(path);
     }
 
-    private void drawVehicle(Graphics2D g2, VehicleWrapper car, double scale, double offX, double offY) {
-        double rawX = car.getX() - controller.getMapMinX();
-        double rawY = controller.getMapMaxY() - car.getY();
-        double screenX = offX + (rawX * scale);
-        double screenY = offY + (rawY * scale);
-
-        double minSize = 6.0;
-        double carWidthPx = Math.max(car.getWidth() * scale, minSize);
-        double carLengthPx = Math.max(car.getLength() * scale, minSize * 2);
-
+    /**
+     * helper to draw a vehicle as a rectangle
+     */
+    private void drawVehicle(Graphics2D g2, VehicleWrapper car) {
         AffineTransform old = g2.getTransform();
-        g2.translate(screenX, screenY);
-        g2.rotate(Math.toRadians(car.getAngle()));
+        g2.translate(car.getX(), car.getY());
+
+        // rotate based on sumo angle
+        g2.rotate(Math.toRadians(-car.getAngle() + 90));
+
+        double w = car.getWidth();
+        double l = car.getLength();
+
         g2.setColor(car.getColor());
-        g2.fill(new Rectangle.Double(-carWidthPx / 2, -carLengthPx / 2, carWidthPx, carLengthPx));
-        g2.setColor(Color.WHITE);
-        g2.setStroke(new BasicStroke(1.0f));
-        g2.draw(new Rectangle.Double(-carWidthPx / 2, -carLengthPx / 2, carWidthPx, carLengthPx));
+        g2.fill(new Rectangle2D.Double(-l/2, -w/2, l, w));
+
         g2.setTransform(old);
     }
 
-    private void drawSignal(Graphics2D g2, TrafficLightWrapper.SignalPoint signal, double scale, double offX, double offY) {
-        double rawX = signal.x - controller.getMapMinX();
-        double rawY = controller.getMapMaxY() - signal.y;
-        double screenX = offX + (rawX * scale);
-        double screenY = offY + (rawY * scale);
-        double size = 8.0;
+    /**
+     * helper to draw a traffic light signal point
+     */
+    private void drawSignal(Graphics2D g2, TrafficLightWrapper.SignalPoint signal, double currentScale) {
+        // keep constant pixel size regardless of zoom
+        double pixelSize = 8.0;
+        double sizeInMeters = pixelSize / currentScale;
 
         g2.setColor(signal.color);
-        g2.fill(new java.awt.geom.Ellipse2D.Double(screenX - size/2, screenY - size/2, size, size));
-        g2.setColor(Color.BLACK);
-        g2.setStroke(new BasicStroke(1.0f));
-        g2.draw(new java.awt.geom.Ellipse2D.Double(screenX - size/2, screenY - size/2, size, size));
-
+        g2.fill(new Ellipse2D.Double(signal.x - sizeInMeters/2, signal.y - sizeInMeters/2, sizeInMeters, sizeInMeters));
     }
 }
