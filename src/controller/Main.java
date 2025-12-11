@@ -10,7 +10,7 @@ public class Main {
         FlatLightLaf.setup();
 
         String sumoBin = "sumo";
-        String config = "sumofiles/frankfurt_city.sumocfg";
+        String config = "sumofiles/frankfurt/frankfurt_city.sumocfg";
 
         SimulationController controller = new SimulationController(sumoBin, config);
 

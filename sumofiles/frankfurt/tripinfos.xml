@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2025-12-11T21:24:31.652906+01:00 by Eclipse SUMO sumo 1.25.0
+<sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="sumofiles/frankfurt/osm.net.xml.gz"/>
+        <route-files value="sumofiles/frankfurt/osm.bus.trips.xml,sumofiles/frankfurt/osm.passenger.trips.xml,sumofiles/frankfurt/osm.truck.trips.xml"/>
+        <additional-files value="sumofiles/frankfurt/osm.poly.xml.gz,sumofiles/frankfurt/output.add.xml"/>
+    </input>
+
+    <output>
+        <tripinfo-output value="sumofiles/frankfurt/tripinfos.xml"/>
+        <statistic-output value="sumofiles/frankfurt/stats.xml"/>
+    </output>
+
+    <processing>
+        <ignore-route-errors value="true"/>
+        <tls.actuated.jam-threshold value="30"/>
+    </processing>
+
+    <routing>
+        <device.rerouting.adaptation-steps value="18"/>
+        <device.rerouting.adaptation-interval value="10"/>
+    </routing>
+
+    <report>
+        <verbose value="true"/>
+        <duration-log.statistics value="true"/>
+        <no-step-log value="true"/>
+    </report>
+
+    <traci_server>
+        <remote-port value="51776"/>
+    </traci_server>
+
+    <gui_only>
+        <gui-settings-file value="sumofiles/frankfurt/osm.view.xml"/>
+    </gui_only>
+
+</sumoConfiguration>
+-->
+
+<tripinfos xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/tripinfo_file.xsd">
+    <tripinfo id="veh6" depart="31.00" departLane="266364690#0_0" departPos="5.10" departSpeed="0.00" departDelay="0.15" arrival="150.00" arrivalLane="4846188#0_0" arrivalPos="9.93" arrivalSpeed="9.32" duration="119.00" routeLength="482.21" waitingTime="63.00" waitingCount="1" stopTime="0.00" timeLoss="72.62" rerouteNo="1" devices="tripinfo_veh6 routing_veh6" vType="veh_passenger" speedFactor="0.94" vaporized=""/>
+    <tripinfo id="veh11" depart="57.00" departLane="4824559#0_0" departPos="0.20" departSpeed="0.00" departDelay="0.45" arrival="172.00" arrivalLane="314922395#0_1" arrivalPos="13.80" arrivalSpeed="12.36" duration="115.00" routeLength="916.29" waitingTime="23.00" waitingCount="2" stopTime="0.00" timeLoss="50.75" rerouteNo="1" devices="tripinfo_veh11 routing_veh11" vType="veh_passenger" speedFactor="1.12" vaporized=""/>
+    <tripinfo id="bus4" depart="61.00" departLane="382344626#0_0" departPos="12.10" departSpeed="0.00" departDelay="0.75" arrival="205.00" arrivalLane="27617250_0" arrivalPos="72.16" arrivalSpeed="8.05" duration="144.00" routeLength="1337.10" waitingTime="12.00" waitingCount="1" stopTime="0.00" timeLoss="33.67" rerouteNo="1" devices="tripinfo_bus4 routing_bus4" vType="bus_bus" speedFactor="1.00" vaporized=""/>
+</tripinfos>
