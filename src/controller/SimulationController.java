@@ -4,6 +4,7 @@ import de.tudresden.sumo.cmd.*;
 import de.tudresden.sumo.objects.SumoBoundingBox;
 import de.tudresden.sumo.objects.SumoGeometry;
 import de.tudresden.sumo.objects.SumoPosition2D;
+import de.tudresden.sumo.objects.SumoStage;
 import de.tudresden.sumo.objects.SumoStringList;
 import it.polito.appeal.traci.SumoTraciConnection;
 import model.EdgeWrapper;
@@ -12,9 +13,15 @@ import model.VehicleWrapper;
 import view.MainFrame;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -24,11 +31,20 @@ public class SimulationController {
 
     private static final Logger log = Logger.getLogger(SimulationController.class.getName());
 
-    private final Map<String, VehicleWrapper> activeVehicles = new HashMap<>();
+    // use ConcurrentHashMap to prevent crashes when gui reads while sim thread writes
+    private final Map<String, VehicleWrapper> activeVehicles = new ConcurrentHashMap<>();
     private final Map<String, TrafficLightWrapper> trafficLights = new HashMap<>();
+
+    // visuals: contains all lanes so the map looks complete
     private final List<EdgeWrapper> mapEdges = new ArrayList<>();
 
-    // history for the statistics panel later
+    // logic: contains only valid car edges for safe spawning
+    private final List<String> drivableEdges = new ArrayList<>();
+
+    // lock object to synchronize all traci communication
+    private final Object traciLock = new Object();
+
+    // history for the statistics panel
     private final List<Double> speedHistory = new ArrayList<>();
     private double currentAvgSpeed = 0.0;
     private final int maxHistoryPoints = 200;
@@ -38,7 +54,7 @@ public class SimulationController {
     private final String config;
 
     // simulation state
-    private boolean isRunning = false;
+    private volatile boolean isRunning = false;
     private boolean isPaused = true;
     private Thread simThread;
     private int simDelay = 100;
@@ -47,6 +63,7 @@ public class SimulationController {
 
     // dynamic map boundaries
     private double mapMinX, mapMinY, mapMaxX, mapMaxY;
+    private final Random random = new Random();
 
     public SimulationController(String sumo, String config) {
         this.sumo = sumo;
@@ -71,17 +88,20 @@ public class SimulationController {
                 conn.runServer();
                 isRunning = true;
 
-                // calculate map bounds from sumo
-                Object Bounds = conn.do_job_get(Simulation.getNetBoundary());
-                if (Bounds instanceof SumoBoundingBox) {
-                    SumoBoundingBox bbox = (SumoBoundingBox) Bounds;
-                    this.mapMinX = bbox.x_min; this.mapMinY = bbox.y_min;
-                    this.mapMaxX = bbox.x_max; this.mapMaxY = bbox.y_max;
-                } else if (Bounds instanceof SumoGeometry) {
-                    calculateBoundsFromGeometry((SumoGeometry) Bounds);
-                }
+                // synchronize initial data fetching
+                synchronized (traciLock) {
+                    // calculate map bounds from sumo
+                    Object Bounds = conn.do_job_get(Simulation.getNetBoundary());
+                    if (Bounds instanceof SumoBoundingBox) {
+                        SumoBoundingBox bbox = (SumoBoundingBox) Bounds;
+                        this.mapMinX = bbox.x_min; this.mapMinY = bbox.y_min;
+                        this.mapMaxX = bbox.x_max; this.mapMaxY = bbox.y_max;
+                    } else if (Bounds instanceof SumoGeometry) {
+                        calculateBoundsFromGeometry((SumoGeometry) Bounds);
+                    }
 
-                loadStaticMapData();
+                    loadMapData();
+                }
 
                 // start the loop in a separate thread so gui doesnt freeze
                 simThread = new Thread(this::simulationLoop);
@@ -92,18 +112,50 @@ public class SimulationController {
         }
     }
 
-    private void loadStaticMapData() throws Exception {
-        // Load Edges
-        SumoStringList laneIds = (SumoStringList) conn.do_job_get(Lane.getIDList());
-        for (String laneId : laneIds) {
-            mapEdges.add(new EdgeWrapper(laneId, conn));
+    /**
+     * loads map data and separates visuals from logic
+     */
+    private void loadMapData() {
+        try {
+            log.info("Loading map data...");
+            SumoStringList laneIds = (SumoStringList) conn.do_job_get(Lane.getIDList());
+            Set<String> safeEdgeSet = new HashSet<>();
+
+            for (String laneId : laneIds) {
+                // 1. visuals: add all lanes (except internal)
+                if (!laneId.startsWith(":")) {
+                    mapEdges.add(new EdgeWrapper(laneId, conn));
+                }
+
+                // 2. logic: filter for cars only
+                if (!laneId.startsWith(":")) {
+                    try {
+                        SumoStringList allowed = (SumoStringList) conn.do_job_get(Lane.getAllowed(laneId));
+                        // if empty (all allowed) or contains "passenger"
+                        if (allowed.isEmpty() || allowed.contains("passenger")) {
+                            String edgeId = laneId.substring(0, laneId.lastIndexOf('_'));
+                            safeEdgeSet.add(edgeId);
+                        }
+                    } catch (Exception e) {
+                        // ignore permission errors
+                    }
+                }
+            }
+
+            drivableEdges.addAll(safeEdgeSet);
+            Collections.sort(drivableEdges);
+
+            // load traffic lights
+            SumoStringList tlsIds = (SumoStringList) conn.do_job_get(Trafficlight.getIDList());
+            for (String id : tlsIds) {
+                trafficLights.put(id, new TrafficLightWrapper(id, conn));
+            }
+
+            log.info("Map Loaded: " + mapEdges.size() + " Visual Lanes | " + drivableEdges.size() + " Drivable Edges.");
+
+        } catch (Exception e) {
+            log.severe("Error loading map: " + e.getMessage());
         }
-        // Load Traffic Lights
-        SumoStringList tlsIds = (SumoStringList) conn.do_job_get(Trafficlight.getIDList());
-        for (String id : tlsIds) {
-            trafficLights.put(id, new TrafficLightWrapper(id, conn));
-        }
-        log.info("Data loaded: " + mapEdges.size() + " Edges, " + trafficLights.size() + " Traffic Lights.");
     }
 
     /**
@@ -114,16 +166,18 @@ public class SimulationController {
         while (isRunning) {
             try {
                 if (!isPaused) {
-                    conn.do_timestep();
-                    step++;
+                    synchronized (traciLock) {
+                        conn.do_timestep();
+                        step++;
 
-                    // Get current data from SUMO
-                    refreshData(step);
-                    calculateStatistics();
+                        // get current data from sumo
+                        refreshData(step);
+                        calculateStatistics();
 
-                    // Print report every 100 steps (console log)
-                    if (step % 100 == 0) {
-                        analyzeTraffic(step);
+                        // print report every 100 steps (console log)
+                        if (step % 100 == 0) {
+                            analyzeTraffic(step);
+                        }
                     }
 
                     // update the gui if it exists
@@ -140,19 +194,19 @@ public class SimulationController {
     }
 
     private void refreshData(int step) throws Exception {
-        // Update Vehicles
+        // update vehicles
         SumoStringList vIds = (SumoStringList) conn.do_job_get(Vehicle.getIDList());
 
-        // Add new cars
+        // add new cars
         for (String id : vIds) {
             if (!activeVehicles.containsKey(id)) {
                 activeVehicles.put(id, new VehicleWrapper(id, conn));
             }
         }
-        // Remove old cars
+        // remove old cars
         activeVehicles.keySet().retainAll(vIds);
 
-        // Update existing cars
+        // update existing cars
         for (VehicleWrapper car : activeVehicles.values()) {
             car.updateData();
         }
@@ -185,58 +239,83 @@ public class SimulationController {
     }
 
     private void analyzeTraffic(int step) {
-        try {
-            int count = activeVehicles.size();
-            if (count == 0) {
-                log.info("Step " + step + ": No vehicles.");
-                return;
-            }
-
-            double totalSpeed = 0;
-            Map<String, Integer> roadCounts = new HashMap<>();
-
-            for (VehicleWrapper car : activeVehicles.values()) {
-                totalSpeed += car.getSpeed();
-
-                // Direct call to SUMO for Road ID
-                String roadId = (String) conn.do_job_get(Vehicle.getRoadID(car.getId()));
-                roadCounts.merge(roadId, 1, Integer::sum);
-            }
-
-            double avgSpeed = (totalSpeed / count) * 3.6; // m/s to km/h
-
-            // Find most used road
-            String topRoad = "";
-            int maxRoad = 0;
-            for (Map.Entry<String, Integer> entry : roadCounts.entrySet()) {
-                if (entry.getValue() > maxRoad) {
-                    maxRoad = entry.getValue();
-                    topRoad = entry.getKey();
-                }
-            }
-
-            log.info(String.format("Step %d | Cars: %d | Speed: %.2f km/h | Top Road: %s (%d)",
-                    step, count, avgSpeed, topRoad, maxRoad));
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // optional analysis logic here
     }
 
     /**
-     * adds a new vehicle to sumo
+     * adds a new vehicle to sumo safely
      */
-    public void spawnVehicle(String id, String type, String route) {
+    public void spawnVehicle(String id, String type, String selection) {
         if (conn == null) return;
-        try {
-            double randomPos = 5.0 + (Math.random() * 35.0);
-            double startSpeed = 3.0;
-            // 0.0 is the depart time (now)
-            conn.do_job_set(Vehicle.add(id, type, route, 0, randomPos, startSpeed, (byte) 0));
-            log.info("Spawned new vehicle: " + id);
-        } catch (Exception e) {
-            log.severe("Error spawning vehicle: " + e.getMessage());
+
+        // spawn in a new thread to avoid blocking the gui
+        new Thread(() -> {
+            synchronized (traciLock) {
+                try {
+                    String fromEdge = null;
+
+                    // picks a safe edge
+                    if (selection == null || selection.equals("Random Route") || selection.startsWith("!")) {
+                        if (!drivableEdges.isEmpty()) {
+                            fromEdge = drivableEdges.get(random.nextInt(drivableEdges.size()));
+                        }
+                    } else if (drivableEdges.contains(selection)) {
+                        fromEdge = selection;
+                    }
+
+                    if (fromEdge == null) {
+                        log.warning("Cannot spawn: No drivable edge found.");
+                        return;
+                    }
+
+                    String routeId = generateRouteFrom(id, fromEdge);
+
+                    if (routeId != null) {
+                        // random offset to prevent invisible queue for cars
+                        double randomPos = 5.0 + (Math.random() * 35.0);
+                        double startSpeed = 3.0;
+
+                        // 0 is the depart time
+                        conn.do_job_set(Vehicle.add(id, type, routeId, 0, randomPos, startSpeed, (byte) 0));
+
+                        // get total count immediately
+                        int totalCars = (int) conn.do_job_get(Simulation.getMinExpectedNumber());
+                        log.info("Spawned " + id + " on " + fromEdge + " (Total: " + totalCars + ")");
+                    } else {
+                        log.warning("No path from " + fromEdge);
+                    }
+
+                } catch (Exception e) {
+                    log.severe("Error spawning vehicle: " + e.getMessage());
+                }
+            }
+        }).start();
+    }
+
+    /**
+     * helper to generate dynamic route
+     */
+    private String generateRouteFrom(String vehicleId, String fromEdge) throws Exception {
+        if (drivableEdges.size() < 2) return null;
+        int attempts = 0;
+        while (attempts < 15) {
+            String toEdge = drivableEdges.get(random.nextInt(drivableEdges.size()));
+            if (fromEdge.equals(toEdge)) { attempts++; continue; }
+
+            try {
+                Object result = conn.do_job_get(Simulation.findRoute(fromEdge, toEdge, "DEFAULT_VEHTYPE", -1.0, 0));
+                if (result instanceof SumoStage) {
+                    SumoStage stage = (SumoStage) result;
+                    if (stage.edges != null && !stage.edges.isEmpty()) {
+                        String newRouteId = "route_" + vehicleId + "_" + System.currentTimeMillis();
+                        conn.do_job_set(Route.add(newRouteId, stage.edges));
+                        return newRouteId;
+                    }
+                }
+            } catch (Exception e) {}
+            attempts++;
         }
+        return null;
     }
 
     // helper to calculate bounds if sumo returns geometry
@@ -278,16 +357,17 @@ public class SimulationController {
 
     // getters for lists
     public List<String> getRouteList() {
-        try {
-            SumoStringList list = (SumoStringList) conn.do_job_get(Route.getIDList());
-            return new ArrayList<>(list);
-        } catch (Exception e) { return new ArrayList<>(); }
+        List<String> list = new ArrayList<>();
+        list.add("Random Route");
+        list.addAll(drivableEdges);
+        return list;
     }
 
     public List<String> getVehicleTypeList() {
         try {
-            SumoStringList list = (SumoStringList) conn.do_job_get(Vehicletype.getIDList());
-            return new ArrayList<>(list);
+            synchronized (traciLock) {
+                return new ArrayList<>((SumoStringList) conn.do_job_get(Vehicletype.getIDList()));
+            }
         } catch (Exception e) { return new ArrayList<>(); }
     }
 
@@ -304,6 +384,6 @@ public class SimulationController {
 
     public java.util.List<EdgeWrapper> getMapEdges() { return mapEdges; }
     public java.util.Map<String, VehicleWrapper> getActiveVehicles() { return activeVehicles; }
-    public java.util.Map<String, TrafficLightWrapper> getTrafficLights() {return trafficLights; }
+    public java.util.Map<String, TrafficLightWrapper> getTrafficLights() { return trafficLights; }
 
 }
