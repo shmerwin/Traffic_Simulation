@@ -19,6 +19,7 @@ public class VehiclePanel extends JPanel {
     private JComboBox<String> routeSelector;
     private JButton spawnButton;
     private JButton refreshListsButton;
+    private JButton stressTestButton;
 
     public VehiclePanel(SimulationController controller) {
         setLayout(new BorderLayout());
@@ -50,8 +51,21 @@ public class VehiclePanel extends JPanel {
         spawnButton = new JButton("Spawn");
         spawnButton.addActionListener(e -> spawnVehicle());
 
+        stressTestButton = new JButton("Spawn 50 cars");
+        stressTestButton.addActionListener(e -> {
+            if (controller != null) {
+                String selectedRoute = (String) routeSelector.getSelectedItem();
+                if (selectedRoute == null || selectedRoute.startsWith("No routes")) {
+                    controller.startStressTest("Random Route");
+                } else {
+                    controller.startStressTest(selectedRoute);
+                }
+            }
+        });
+
         buttonPanel.add(refreshListsButton);
         buttonPanel.add(spawnButton);
+        buttonPanel.add(stressTestButton);
         add(buttonPanel, BorderLayout.SOUTH);
 
         // instructions label
