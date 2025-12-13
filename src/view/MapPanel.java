@@ -14,9 +14,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * panel responsible for rendering the simulation map
- * draws edges, vehicles and traffic lights
- * includes zoom and pan functionality
+ * Panel responsible for rendering the simulation map.
+ * Enhanced: Vehicles now have borders and minimum size constraints for better visibility.
  */
 public class MapPanel extends JPanel {
 
@@ -24,7 +23,8 @@ public class MapPanel extends JPanel {
 
     // colors
     private static final Color COLOR_BACKGROUND = new Color(30, 30, 30);
-    private static final Color COLOR_ROAD = Color.LIGHT_GRAY;
+    private static final Color COLOR_ROAD = new Color(100, 100, 100); // Slightly darker for contrast
+    private static final Color COLOR_ROAD_OUTLINE = new Color(60, 60, 60);
 
     // navigation state
     private double zoom = 1.0;
@@ -34,10 +34,8 @@ public class MapPanel extends JPanel {
     private Point lastMousePt;
 
     public MapPanel() {
-        // set dark background color
         setBackground(COLOR_BACKGROUND);
 
-        // mouse handling for zoom and pan
         MouseAdapter mouseHandler = new MouseAdapter() {
             @Override
             public void mouseWheelMoved(MouseWheelEvent e) {
@@ -60,11 +58,8 @@ public class MapPanel extends JPanel {
                 if (lastMousePt != null) {
                     double dx = e.getX() - lastMousePt.x;
                     double dy = e.getY() - lastMousePt.y;
-
-                    // adjust camera position
                     camX -= dx / getScale();
                     camY += dy / getScale();
-
                     lastMousePt = e.getPoint();
                     repaint();
                 }
@@ -76,10 +71,6 @@ public class MapPanel extends JPanel {
         addMouseWheelListener(mouseHandler);
     }
 
-    /**
-     * sets the controller reference needed for data access
-     * @param controller the simulation controller
-     */
     public void setController(SimulationController controller) {
         this.controller = controller;
     }
@@ -92,7 +83,6 @@ public class MapPanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // check if controller is ready
         if (controller == null) {
             g.setColor(Color.WHITE);
             g.drawString("Waiting for Controller...", 20, 20);
@@ -100,69 +90,49 @@ public class MapPanel extends JPanel {
         }
 
         Graphics2D g2d = (Graphics2D) g;
-        // enable antialiasing for smoother drawing
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         double mapWidth = controller.getMapWidth();
         double mapHeight = controller.getMapHeight();
 
-        // check if map is loaded
         if (mapWidth == 0 || mapHeight == 0) {
             g.setColor(Color.WHITE);
             g.drawString("Press Play to load Map...", 20, 20);
             return;
         }
 
-        // auto center on first load
         if (firstLoad) {
             camX = controller.getMapMinX() + (mapWidth / 2.0);
             camY = controller.getMapMinY() + (mapHeight / 2.0);
-
             double scaleX = getWidth() / mapWidth;
             double scaleY = getHeight() / mapHeight;
-
-            // simple if else for min scale
-            if (scaleX < scaleY) {
-                zoom = scaleX * 0.9 / 5.0;
-            } else {
-                zoom = scaleY * 0.9 / 5.0;
-            }
-
+            zoom = (scaleX < scaleY ? scaleX : scaleY) * 0.9 / 5.0;
             firstLoad = false;
         }
 
-        // save old transform to restore later
         AffineTransform oldTransform = g2d.getTransform();
         AffineTransform tx = new AffineTransform();
-
-        // center on screen
         tx.translate(getWidth() / 2.0, getHeight() / 2.0);
-
-        // apply scale and flip y axis
         double s = getScale();
         tx.scale(s, -s);
-
-        // move camera to position
         tx.translate(-camX, -camY);
-
         g2d.setTransform(tx);
 
-        // draw map edges (roads)
+        // Draw Roads
         List<EdgeWrapper> edges = controller.getMapEdges();
         if (edges != null) {
-            g2d.setColor(COLOR_ROAD);
             for (EdgeWrapper edge : edges) {
-                drawEdge(g2d, edge);
+                drawEdge(g2d, edge, s);
             }
         }
 
-        // draw vehicles
+        // Draw Vehicles with Enhanced Visibility
         Map<String, VehicleWrapper> vehicles = controller.getActiveVehicles();
         for (VehicleWrapper car : vehicles.values()) {
-            drawVehicle(g2d, car);
+            drawVehicle(g2d, car, s);
         }
 
-        // draw traffic lights
+        // Draw Traffic Lights
         Map<String, TrafficLightWrapper> lights = controller.getTrafficLights();
         if (lights != null) {
             for (TrafficLightWrapper tls : lights.values()) {
@@ -172,72 +142,89 @@ public class MapPanel extends JPanel {
             }
         }
 
-        // restore transform for hud
         g2d.setTransform(oldTransform);
 
-        // debug info
+        // HUD
         g2d.setColor(Color.WHITE);
-
-        int edgeCount = 0;
-        if (edges != null) {
-            edgeCount = edges.size();
-        }
-
-        g2d.drawString("Cars: " + vehicles.size() + " | Streets: " + edgeCount, 20, 30);
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 12));
+        g2d.drawString("Cars: " + vehicles.size() + " | Streets: " + (edges != null ? edges.size() : 0), 20, 30);
         g2d.drawString("Zoom: " + String.format("%.2f", zoom), 20, 50);
     }
 
-    /**
-     * helper to draw a single road edge
-     */
-    private void drawEdge(Graphics2D g2, EdgeWrapper edge) {
+    private void drawEdge(Graphics2D g2, EdgeWrapper edge, double scale) {
         List<SumoPosition2D> points = edge.getShapePoints();
-        if (points.isEmpty()) {
-            return;
-        }
+        if (points.isEmpty()) return;
 
         Path2D path = new Path2D.Double();
-        boolean first = true;
-        for (SumoPosition2D p : points) {
-            if (first) {
-                path.moveTo(p.x, p.y);
-                first = false;
-            } else {
-                path.lineTo(p.x, p.y);
-            }
-        }
+        path.moveTo(points.get(0).x, points.get(0).y);
+        for (int i = 1; i < points.size(); i++) path.lineTo(points.get(i).x, points.get(i).y);
 
         float width = (float) edge.getWidth();
+
+        // Optional: Draw road outline for better contrast
+        g2.setStroke(new BasicStroke(width + (float)(1.0/scale), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g2.setColor(COLOR_ROAD_OUTLINE);
+        g2.draw(path);
+
+        // Draw main road
         g2.setStroke(new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g2.setColor(COLOR_ROAD);
         g2.draw(path);
     }
 
-    /**
-     * helper to draw a vehicle as a rectangle
-     */
-    private void drawVehicle(Graphics2D g2, VehicleWrapper car) {
+    private void drawVehicle(Graphics2D g2, VehicleWrapper car, double scale) {
         AffineTransform old = g2.getTransform();
         g2.translate(car.getX(), car.getY());
-
-        // rotate based on sumo angle
-        g2.rotate(Math.toRadians(-car.getAngle() + 90));
 
         double w = car.getWidth();
         double l = car.getLength();
 
+        // VISIBILITY FIX: Minimum size constraint
+        // If the car is smaller than 4 pixels on screen, scale it up visually
+        double minPixels = 4.0;
+        double currentSizePixels = l * scale;
+
+        double drawScale = 1.0;
+        if (currentSizePixels < minPixels) {
+            drawScale = minPixels / currentSizePixels;
+        }
+
+        // Rotate
+        g2.rotate(Math.toRadians(-car.getAngle() + 90));
+
+        // Draw Car Body
         g2.setColor(car.getColor());
-        g2.fill(new Rectangle2D.Double(-l/2, -w/2, l, w));
+
+        Shape carShape;
+        if (drawScale > 1.5) {
+            // If heavily zoomed out, draw as a simple circle (dot) for clarity
+            double size = Math.max(w, l) * drawScale;
+            carShape = new Ellipse2D.Double(-size/2, -size/2, size, size);
+        } else {
+            // Otherwise draw the detailed rectangle
+            carShape = new Rectangle2D.Double(-l/2 * drawScale, -w/2 * drawScale, l * drawScale, w * drawScale);
+        }
+
+        g2.fill(carShape);
+
+        // VISIBILITY FIX: Contrast Border
+        // Draw a 1-pixel constant width border around the car
+        // We use (1.0 / scale) to ensure the line is always 1 pixel on SCREEN, not in world
+        g2.setColor(Color.BLACK);
+        g2.setStroke(new BasicStroke((float)(1.0 / scale)));
+        g2.draw(carShape);
 
         g2.setTransform(old);
     }
 
-    /**
-     * helper to draw a traffic light signal point
-     */
     private void drawSignal(Graphics2D g2, TrafficLightWrapper.SignalPoint signal, double currentScale) {
-        // keep constant pixel size regardless of zoom
-        double pixelSize = 8.0;
-        double sizeInMeters = pixelSize / currentScale;
+        double baseSizeMeters = 3.0;
+        double minPixels = 2.0;
+
+        double sizeInMeters = baseSizeMeters;
+        if (baseSizeMeters * currentScale < minPixels) {
+            sizeInMeters = minPixels / currentScale;
+        }
 
         g2.setColor(signal.color);
         g2.fill(new Ellipse2D.Double(signal.x - sizeInMeters/2, signal.y - sizeInMeters/2, sizeInMeters, sizeInMeters));

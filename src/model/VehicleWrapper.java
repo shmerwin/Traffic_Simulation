@@ -6,12 +6,16 @@ import de.tudresden.sumo.objects.SumoPosition2D;
 import it.polito.appeal.traci.SumoTraciConnection;
 
 import java.awt.Color;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Wrapper for a vehicle in the sumo connection
  * Uses traas commands for getting our own
  */
 public class VehicleWrapper {
+
+    private static final Logger log = Logger.getLogger(VehicleWrapper.class.getName());
 
     private final String id;
     private final SumoTraciConnection conn;
@@ -43,6 +47,7 @@ public class VehicleWrapper {
             this.length = (double) conn.do_job_get(Vehicle.getLength(id));
             this.width = (double) conn.do_job_get(Vehicle.getWidth(id));
         } catch (Exception e) {
+            log.log(Level.WARNING, "Failed to fetch static data for vehicle " + id, e);
             this.color = Color.YELLOW;
             this.length = 5.0; this.width = 2.0;
         }
@@ -58,17 +63,16 @@ public class VehicleWrapper {
     /**
      * Method to retrieve the position and speed of the vehicle
      */
-
     public void updateData() {
         try {
             SumoPosition2D pos = (SumoPosition2D) conn.do_job_get(Vehicle.getPosition(id));
             this.x = pos.x; this.y = pos.y;
             this.angle = (double) conn.do_job_get(Vehicle.getAngle(id));
             this.speed = (double) conn.do_job_get(Vehicle.getSpeed(id));
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Failed to update data for vehicle " + id, e);
+        }
     }
-
-
 
     public String getId() { return id;}
     public double getX() { return x; }
@@ -85,6 +89,8 @@ public class VehicleWrapper {
      * @throws Exception if data cannot be retrieved
      */
     public String getRoadId() throws Exception {
+        // Warning: This method uses the shared connection directly and might require external synchronization
+        // if called outside the main simulation loop.
         return (String) conn.do_job_get(Vehicle.getRoadID(id));
     }
 
