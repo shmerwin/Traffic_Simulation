@@ -35,10 +35,10 @@ public class SimulationController {
     private final Map<String, VehicleWrapper> activeVehicles = new ConcurrentHashMap<>();
     private final Map<String, TrafficLightWrapper> trafficLights = new HashMap<>();
 
-    // visuals: contains all lanes so the map looks complete
+    // contains all lanes so the map looks complete
     private final List<EdgeWrapper> mapEdges = new ArrayList<>();
 
-    // logic: contains only valid car edges for safe spawning
+    // contains only valid car edges for safe spawning
     private final List<String> drivableEdges = new ArrayList<>();
 
     // lock object to synchronize all traci communication
@@ -117,7 +117,7 @@ public class SimulationController {
      */
     private void loadMapData() {
         try {
-            log.info("Loading map data...");
+            log.info("Loading map data");
             SumoStringList laneIds = (SumoStringList) conn.do_job_get(Lane.getIDList());
             Set<String> safeEdgeSet = new HashSet<>();
 
