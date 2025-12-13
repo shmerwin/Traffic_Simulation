@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -289,6 +288,20 @@ public class SimulationController {
                     log.severe("Error spawning vehicle: " + e.getMessage());
                 }
             }
+        }).start();
+    }
+
+    public void startStressTest(String selectedEdge) {
+        if (!isRunning) return;
+        new Thread(() -> {
+            log.info("Starting Stress Test (50 Cars) on edge: " + selectedEdge);
+            long batchId = System.currentTimeMillis();
+            for (int i = 0; i < 50; i++) {
+                String id = "stress_" + batchId + "_" + i;
+                spawnVehicle(id, "DEFAULT_VEHTYPE", selectedEdge);
+                try { Thread.sleep(10); } catch (InterruptedException e) {}
+            }
+            log.info("Stress Test Injection Loop Finished.");
         }).start();
     }
 
