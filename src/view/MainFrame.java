@@ -14,6 +14,11 @@ public class MainFrame extends JFrame {
     private ControlPanel controlPanel;
     private JTabbedPane infoTabs;
 
+    // the sub-panels for the tabs
+    private VehiclePanel vehiclePanel;
+    private TrafficLightPanel trafficLightPanel;
+    private StatisticsPanel statisticsPanel;
+
     /**
      * Initializes the main frame and all sub-panels.
      * @param controller The simulation controller reference.
@@ -35,9 +40,24 @@ public class MainFrame extends JFrame {
         controlPanel.setController(controller);
         add(controlPanel, BorderLayout.NORTH);
 
-        // Info Tabs (East comes later)
+        // Info Tabs (East)
         infoTabs = new JTabbedPane();
         infoTabs.setPreferredSize(new Dimension(320, 0));
+
+        // Create and add Vehicle Tab
+        vehiclePanel = new VehiclePanel(controller);
+        vehiclePanel.setController(controller);
+        infoTabs.addTab("Vehicle", vehiclePanel);
+
+        // Create and add Traffic Light Tab
+        trafficLightPanel = new TrafficLightPanel();
+        trafficLightPanel.setController(controller);
+        infoTabs.addTab("Traffic Lights", trafficLightPanel);
+
+        // Create and add Statistics Tab
+        statisticsPanel = new StatisticsPanel();
+        statisticsPanel.setController(controller);
+        infoTabs.addTab("Statistics", statisticsPanel);
 
         add(infoTabs, BorderLayout.EAST);
 
@@ -55,6 +75,13 @@ public class MainFrame extends JFrame {
         if (mapPanel != null) {
             mapPanel.repaint();
         }
+        if (trafficLightPanel != null) {
+            trafficLightPanel.update();
+        }
+        if (statisticsPanel != null) {
+            statisticsPanel.update();
+        }
+        // vehicle panel does not need constant updates unless opened
     }
 
     public MapPanel getMapPanel() {

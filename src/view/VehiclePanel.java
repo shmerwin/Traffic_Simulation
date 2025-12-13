@@ -20,7 +20,7 @@ public class VehiclePanel extends JPanel {
     private JButton spawnButton;
     private JButton refreshListsButton;
 
-    public VehiclePanel() {
+    public VehiclePanel(SimulationController controller) {
         setLayout(new BorderLayout());
 
         // create form area
