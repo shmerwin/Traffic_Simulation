@@ -211,10 +211,9 @@ public class SimulationController {
         }
 
         // update tls every 10 steps for performance
-        if (step % 10 == 0) {
-            for (TrafficLightWrapper tls : trafficLights.values()) {
-                tls.updateData();
-            }
+
+        for (TrafficLightWrapper tls : trafficLights.values()) {
+            tls.updateData();
         }
     }
 
