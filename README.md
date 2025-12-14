@@ -44,33 +44,19 @@ How to Run
 
         Start a SUMO server instance.
 
-        Load the configuration file sumofiles/test123.sumocfg.
-
-        Run the simulation for 5000 steps.
-
-        Log traffic statistics (vehicle count, average speed) to the console.
-
-        Alternatively, in the beginning of our main, replace the string "sumo" with "sumo-gui"
-        and the pre existing sumo gui will open and you can simulate.
+        Open our GUI and be ready to use upon pressing play
 ------
 Project Structure
 
     src/: Contains the Java source code.
 
-        controller.Main.java: The entry point of the application.
+        controller/: The entry point of the application and the one handling data between model and view.
 
         model/: Contains classes for Vehicles, Traffic Lights, and Edges.
+
+        view/: Contains classes for the GUI.
 
     sumofiles/: Contains the SUMO network and route files.
 
     lib/: Contains external libraries (TraaS.jar).
-------
-Features (Milestone 1)
 
-    Connection to SUMO via TraaS.
-
-    Object-Oriented Wrappers for simulation objects.
-
-    Basic traffic analysis logging (Vehicle count, Average speed).
-
-    Clean console logging configuration.
