@@ -85,7 +85,7 @@ public class MapPanel extends JPanel {
 
         if (controller == null) {
             g.setColor(Color.WHITE);
-            g.drawString("Waiting for Controller...", 20, 20);
+            g.drawString("Waiting for Controller", 20, 20);
             return;
         }
 
@@ -179,7 +179,7 @@ public class MapPanel extends JPanel {
         double w = car.getWidth();
         double l = car.getLength();
 
-        // VISIBILITY FIX: Minimum size constraint
+        // Minimum size constraint
         // If the car is smaller than 4 pixels on screen, scale it up visually
         double minPixels = 4.0;
         double currentSizePixels = l * scale;
@@ -207,9 +207,8 @@ public class MapPanel extends JPanel {
 
         g2.fill(carShape);
 
-        // VISIBILITY FIX: Contrast Border
         // Draw a 1-pixel constant width border around the car
-        // We use (1.0 / scale) to ensure the line is always 1 pixel on SCREEN, not in world
+        // We use (1.0 / scale) to ensure the line is always 1 pixel on screen, not in world
         g2.setColor(Color.BLACK);
         g2.setStroke(new BasicStroke((float)(1.0 / scale)));
         g2.draw(carShape);

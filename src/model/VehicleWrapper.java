@@ -36,7 +36,7 @@ public class VehicleWrapper {
     }
 
     /**
-     *Methode to retrieve and assign color,length and width of the vehicle from sumo
+     * Methode to retrieve and assign color,length and width of the vehicle from sumo
      * in case of communication failure default values are set.
      */
     private void fetchStaticData() {
