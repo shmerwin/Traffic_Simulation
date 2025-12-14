@@ -97,7 +97,7 @@ public class MapPanel extends JPanel {
 
         if (mapWidth == 0 || mapHeight == 0) {
             g.setColor(Color.WHITE);
-            g.drawString("Press Play to load Map...", 20, 20);
+            g.drawString("Press Play to load Map", 20, 20);
             return;
         }
 
@@ -218,7 +218,7 @@ public class MapPanel extends JPanel {
     }
 
     private void drawSignal(Graphics2D g2, TrafficLightWrapper.SignalPoint signal, double currentScale) {
-        double baseSizeMeters = 3.0;
+        double baseSizeMeters = 1.5;
         double minPixels = 2.0;
 
         double sizeInMeters = baseSizeMeters;

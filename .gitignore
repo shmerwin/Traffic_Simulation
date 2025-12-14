@@ -28,6 +28,10 @@ bin/
 ### Mac OS ###
 .DS_Store
 
-**/edgeData.xml
-**/stats.xml
-**/tripinfos.xml
+sumofiles/frankfurt/edgeData.xml
+sumofiles/frankfurt/stats.xml
+sumofiles/frankfurt/tripinfos.xml
+
+sumofiles/langen/edgeData.xml
+sumofiles/langen/stats.xml
+sumofiles/langen/tripinfos.xml

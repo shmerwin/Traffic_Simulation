@@ -30,7 +30,7 @@ public class TrafficLightWrapper {
     public static class SignalPoint {
         public double x, y;
         public Color color;
-        public SignalPoint(double x, double y) { this.x = x; this.y = y; this.color = Color.RED; }
+        public SignalPoint(double x, double y) { this.x = x; this.y = y; this.color = Color.RED;}
     }
     // List of every light being controlled by the tls
     private final List<SignalPoint> signalPoints = new ArrayList<>();
