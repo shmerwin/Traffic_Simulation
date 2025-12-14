@@ -121,12 +121,12 @@ public class SimulationController {
             Set<String> safeEdgeSet = new HashSet<>();
 
             for (String laneId : laneIds) {
-                // 1. visuals: add all lanes (except internal)
+                // visuals: add all lanes (except internal)
                 if (!laneId.startsWith(":")) {
                     mapEdges.add(new EdgeWrapper(laneId, conn));
                 }
 
-                // 2. logic: filter for cars only
+                // logic: filter for cars only
                 if (!laneId.startsWith(":")) {
                     try {
                         SumoStringList allowed = (SumoStringList) conn.do_job_get(Lane.getAllowed(laneId));
