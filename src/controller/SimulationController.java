@@ -1,25 +1,15 @@
 package controller;
 
 import de.tudresden.sumo.cmd.*;
-import de.tudresden.sumo.objects.SumoBoundingBox;
-import de.tudresden.sumo.objects.SumoGeometry;
-import de.tudresden.sumo.objects.SumoPosition2D;
-import de.tudresden.sumo.objects.SumoStage;
-import de.tudresden.sumo.objects.SumoStringList;
+import de.tudresden.sumo.objects.*;
 import it.polito.appeal.traci.SumoTraciConnection;
+import javafx.application.Platform;
 import model.EdgeWrapper;
 import model.TrafficLightWrapper;
 import model.VehicleWrapper;
-import view.MainFrame;
+import view.FxMainFrame;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -58,7 +48,7 @@ public class SimulationController {
     private Thread simThread;
     private int simDelay = 100;
 
-    private MainFrame view;
+    private FxMainFrame view;
 
     // dynamic map boundaries
     private double mapMinX, mapMinY, mapMaxX, mapMaxY;
@@ -73,7 +63,7 @@ public class SimulationController {
      * connects the view to the controller
      * @param view the mainframe
      */
-    public void setView(MainFrame view) {
+    public void setView(FxMainFrame view) {
         this.view = view;
     }
 
@@ -181,7 +171,7 @@ public class SimulationController {
 
                     // update the gui if it exists
                     if (view != null) {
-                        javax.swing.SwingUtilities.invokeLater(() -> view.refresh());
+                        Platform.runLater(() -> view.refresh());
                     }
                 }
                 Thread.sleep(simDelay);
@@ -211,9 +201,10 @@ public class SimulationController {
         }
 
         // update tls every 10 steps for performance
-
-        for (TrafficLightWrapper tls : trafficLights.values()) {
-            tls.updateData();
+        if (step % 10 == 0) {
+            for (TrafficLightWrapper tls : trafficLights.values()) {
+                tls.updateData();
+            }
         }
     }
 
@@ -394,8 +385,8 @@ public class SimulationController {
     public double getCurrentAvgSpeed() { return currentAvgSpeed; }
     public List<Double> getSpeedHistory() { return new ArrayList<>(speedHistory); }
 
-    public java.util.List<EdgeWrapper> getMapEdges() { return mapEdges; }
-    public java.util.Map<String, VehicleWrapper> getActiveVehicles() { return activeVehicles; }
-    public java.util.Map<String, TrafficLightWrapper> getTrafficLights() { return trafficLights; }
+    public List<EdgeWrapper> getMapEdges() { return mapEdges; }
+    public Map<String, VehicleWrapper> getActiveVehicles() { return activeVehicles; }
+    public Map<String, TrafficLightWrapper> getTrafficLights() { return trafficLights; }
 
 }

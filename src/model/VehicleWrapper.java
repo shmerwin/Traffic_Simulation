@@ -5,7 +5,7 @@ import de.tudresden.sumo.objects.SumoColor;
 import de.tudresden.sumo.objects.SumoPosition2D;
 import it.polito.appeal.traci.SumoTraciConnection;
 
-import java.awt.Color;
+import javafx.scene.paint.Color;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,7 +43,7 @@ public class VehicleWrapper {
         try {
             SumoColor sc = (SumoColor) conn.do_job_get(Vehicle.getColor(id));
             int r = RGBLimiter(sc.r); int g = RGBLimiter(sc.g); int b = RGBLimiter(sc.b);
-            this.color = new Color(r, g, b);
+            this.color = Color.rgb(r, g, b);
             this.length = (double) conn.do_job_get(Vehicle.getLength(id));
             this.width = (double) conn.do_job_get(Vehicle.getWidth(id));
         } catch (Exception e) {
