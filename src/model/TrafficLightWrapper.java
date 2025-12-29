@@ -7,7 +7,7 @@ import de.tudresden.sumo.objects.SumoStringList;
 import de.tudresden.sumo.objects.SumoTLSProgram;
 import it.polito.appeal.traci.SumoTraciConnection;
 
-import java.awt.Color;
+import javafx.scene.paint.Color;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -127,7 +127,7 @@ public class TrafficLightWrapper {
             case 'y': case 'Y': return Color.YELLOW;
             case 'g': case 'G': return Color.GREEN;
             case 'u': case 'U': return Color.ORANGE;
-            default: return Color.DARK_GRAY;
+            default: return Color.DARKGRAY;
         }
     }
     public String getId() { return id; }
