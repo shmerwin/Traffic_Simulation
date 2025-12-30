@@ -1,24 +1,23 @@
-# Default ignored files
+# --- Maven (Build-Dateien & Kompiliertes) ---
+target/
+dependency-reduced-pom.xml
+
+# --- IntelliJ IDEA (IDE-Einstellungen & Cache) ---
+.idea/
+*.iml
 /shelf/
 /workspace.xml
-# Editor-based HTTP Client requests
 /httpRequests/
-# Environment-dependent path to Maven home directory
-/mavenHomeManager.xml
-# Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
 
+# --- Simulation Outputs (Statistiken etc.) ---
+# Ignoriert diese Dateien überall, egal in welchem Unterordner
+stats.xml
+tripinfos.xml
+edgeData.xml
+*.log
 
-sumofiles/frankfurt/edgeData.xml
-sumofiles/frankfurt/stats.xml
-sumofiles/frankfurt/tripinfos.xml
-
-sumofiles/langen/edgeData.xml
-sumofiles/langen/stats.xml
-sumofiles/langen/tripinfos.xml
-
-pom.xml
-dependency-reduced-pom.xml
-TrafficSimulation.iml
-target
+# --- Betriebssystem Müll ---
+.DS_Store
+Thumbs.db
