@@ -1,8 +1,7 @@
-# --- Maven (Build-Dateien & Kompiliertes) ---
+
 target/
 dependency-reduced-pom.xml
 
-# --- IntelliJ IDEA (IDE-Einstellungen & Cache) ---
 .idea/
 *.iml
 /shelf/
@@ -11,13 +10,10 @@ dependency-reduced-pom.xml
 /dataSources/
 /dataSources.local.xml
 
-# --- Simulation Outputs (Statistiken etc.) ---
-# Ignoriert diese Dateien überall, egal in welchem Unterordner
 stats.xml
 tripinfos.xml
 edgeData.xml
 *.log
 
-# --- Betriebssystem Müll ---
 .DS_Store
 Thumbs.db
