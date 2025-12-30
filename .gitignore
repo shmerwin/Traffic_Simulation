@@ -35,3 +35,8 @@ sumofiles/frankfurt/tripinfos.xml
 sumofiles/langen/edgeData.xml
 sumofiles/langen/stats.xml
 sumofiles/langen/tripinfos.xml
+
+pom.xml
+dependency-reduced-pom.xml
+TrafficSimulation.iml
+target
