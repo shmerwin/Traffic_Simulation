@@ -11,6 +11,7 @@ import view.FxMainFrame;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -97,7 +98,7 @@ public class SimulationController {
                 simThread.start();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.getMessage(), e);
         }
     }
 
@@ -112,9 +113,9 @@ public class SimulationController {
 
             for (String laneId : laneIds) {
                 // visuals: add all lanes (except internal)
-                if (!laneId.startsWith(":")) {
-                    mapEdges.add(new EdgeWrapper(laneId, conn));
-                }
+
+                mapEdges.add(new EdgeWrapper(laneId, conn));
+
 
                 // logic: filter for cars only
                 if (!laneId.startsWith(":")) {
@@ -176,7 +177,7 @@ public class SimulationController {
                 }
                 Thread.sleep(simDelay);
             } catch (Exception e) {
-                e.printStackTrace();
+                log.log(Level.SEVERE, "Error simulation: " + e.getMessage());
                 stop();
             }
         }
@@ -340,7 +341,7 @@ public class SimulationController {
                 conn.close();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Error closing connection.", e);
         }
     }
 

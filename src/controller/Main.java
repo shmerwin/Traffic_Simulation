@@ -3,6 +3,9 @@ package controller;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import view.FxMainFrame;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javafx.application.Platform;
 
 /**
  * Main entry point for the Traffic Simulation
@@ -10,6 +13,7 @@ import view.FxMainFrame;
  */
 public class Main extends Application {
 
+    private static final Logger log = Logger.getLogger(Main.class.getName());
     private SimulationController controller;
 
     /**
@@ -36,7 +40,9 @@ public class Main extends Application {
         }
         // Perform standard JavaFX cleanup
         super.stop();
-        System.exit(0);
+        log.info("Simulation stopped");
+        Platform.exit();
+
     }
 
     // Starts the JavaFX application by calling launch(), which then triggers the start() method
