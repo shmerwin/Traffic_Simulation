@@ -50,8 +50,6 @@
             <groupId>it.polito.appeal</groupId>
             <artifactId>traci</artifactId>
             <version>1.0</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/TraaS.jar</systemPath>
         </dependency>
     </dependencies>
 
