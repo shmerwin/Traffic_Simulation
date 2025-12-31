@@ -12,11 +12,15 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Wrapper for instances of traffic lights
  */
 public class TrafficLightWrapper {
+
+    private static final Logger log = Logger.getLogger(TrafficLightWrapper.class.getName());
 
     private final String id;
     private final SumoTraciConnection conn;
@@ -118,6 +122,21 @@ public class TrafficLightWrapper {
                     updateData();
                 } catch (Exception ex) {}
             }
+        }
+    }
+
+    /**
+     * Sets the duration of the current traffic light phase.
+     * @param seconds is the new duration of the phase.
+     */
+    public void setPhaseDuration(double seconds) {
+        try {
+            conn.do_job_set(Trafficlight.setPhaseDuration(id, seconds));
+
+
+            updateData();
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "Error setting phase duration for traffic light " + id, e);
         }
     }
 

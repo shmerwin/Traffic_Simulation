@@ -74,6 +74,44 @@ public class VehicleWrapper {
         }
     }
 
+
+
+    /**
+     * Sets the color of the vehicle.
+     * Converts color to SUMO color.
+     * @param fxColor The new color (JavaFX).
+     */
+    public void setColor(Color fxColor) {
+        try {
+            // Conversion: JavaFX uses 0.0-1.0, SUMO requires 0-255
+            int r = (int) (fxColor.getRed() * 255);
+            int g = (int) (fxColor.getGreen() * 255);
+            int b = (int) (fxColor.getBlue() * 255);
+
+            SumoColor sc = new SumoColor(r, g, b, 255)
+
+            conn.do_job_set(Vehicle.setColor(id, sc));
+
+
+            this.color = fxColor;
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Could not set color for vehicle " + id, e);
+        }
+    }
+
+    /**
+     * Sets the vehicle speed manually.
+     * @param speedMs is the speed in m/s.
+     */
+    public void setSpeed(double speedMs) {
+        try {
+            conn.do_job_set(Vehicle.setSpeed(id, speedMs));
+            this.speed = speedMs;
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Could not set speed for vehicle " + id, e);
+        }
+    }
+
     public String getId() { return id;}
     public double getX() { return x; }
     public double getY() { return y; }
