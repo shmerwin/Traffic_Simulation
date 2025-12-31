@@ -88,7 +88,7 @@ public class VehicleWrapper {
             int g = (int) (fxColor.getGreen() * 255);
             int b = (int) (fxColor.getBlue() * 255);
 
-            SumoColor sc = new SumoColor(r, g, b, 255)
+            SumoColor sc = new SumoColor(r, g, b, 255);
 
             conn.do_job_set(Vehicle.setColor(id, sc));
 
