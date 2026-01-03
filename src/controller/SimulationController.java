@@ -235,7 +235,7 @@ public class SimulationController {
     /**
      * adds a new vehicle to sumo safely
      */
-    public void spawnVehicle(String id, String type, String selection) {
+    public void spawnVehicle(String id, String type, String selection, javafx.scene.paint.Color color) {
         if (conn == null) return;
 
         // spawn in a new thread to avoid blocking the gui
@@ -268,6 +268,12 @@ public class SimulationController {
                         // 0 is the depart time
                         conn.do_job_set(Vehicle.add(id, type, routeId, 0, randomPos, startSpeed, (byte) 0));
 
+                        VehicleWrapper newCar = new VehicleWrapper(id, conn);
+                        newCar.setColor(color);
+
+                        activeVehicles.put(id, newCar);
+                        log.info("Spawned " + id + " with custom color.");
+
                         // get total count immediately
                         int totalCars = (int) conn.do_job_get(Simulation.getMinExpectedNumber());
                         log.info("Spawned " + id + " on " + fromEdge + " (Total: " + totalCars + ")");
@@ -289,7 +295,13 @@ public class SimulationController {
             long batchId = System.currentTimeMillis();
             for (int i = 0; i < 50; i++) {
                 String id = "stress_" + batchId + "_" + i;
-                spawnVehicle(id, "DEFAULT_VEHTYPE", selectedEdge);
+                javafx.scene.paint.Color randomColor = javafx.scene.paint.Color.color(
+                        random.nextDouble(),
+                        random.nextDouble(),
+                        random.nextDouble()
+                );
+
+                spawnVehicle(id, "DEFAULT_VEHTYPE", selectedEdge, randomColor);
                 try { Thread.sleep(10); } catch (InterruptedException e) {}
             }
             log.info("Stress Test Injection Loop Finished.");

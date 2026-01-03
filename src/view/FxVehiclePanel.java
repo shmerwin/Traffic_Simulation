@@ -8,12 +8,16 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import java.util.List;
 
+import javafx.scene.control.ColorPicker;
+import javafx.scene.paint.Color;
+
 public class FxVehiclePanel extends VBox {
 
     private SimulationController controller;
     private TextField idField;
     private ComboBox<String> typeSelector;
     private ComboBox<String> routeSelector;
+    private ColorPicker colorPicker;
 
     public FxVehiclePanel(SimulationController controller) {
         this.controller = controller;
@@ -23,6 +27,11 @@ public class FxVehiclePanel extends VBox {
 
         GridPane grid = new GridPane();
         grid.setHgap(10); grid.setVgap(10);
+
+        grid.add(new Label("Color:"), 0, 3);
+        colorPicker = new ColorPicker(Color.YELLOW);
+        colorPicker.setMaxWidth(Double.MAX_VALUE);
+        grid.add(colorPicker, 1, 3);
 
         grid.add(new Label("Vehicle ID:"), 0, 0);
         idField = new TextField("new_car");
@@ -97,7 +106,6 @@ public class FxVehiclePanel extends VBox {
             routeSelector.getItems().addAll(routes);
         }
 
-        // Komfort: Erstes auswählen (Das ist eine Verbesserung gegenüber Swing, gut so!)
         if (!routes.isEmpty()) routeSelector.getSelectionModel().selectFirst();
         if (!types.isEmpty()) typeSelector.getSelectionModel().selectFirst();
     }
@@ -112,6 +120,8 @@ public class FxVehiclePanel extends VBox {
         String type = typeSelector.getValue();
         String route = routeSelector.getValue();
 
+        javafx.scene.paint.Color selectedColor = colorPicker.getValue();
+
         // validation
         if (route == null || route.startsWith("No routes")) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
@@ -123,9 +133,12 @@ public class FxVehiclePanel extends VBox {
         }
 
         if (id != null && !id.isEmpty() && type != null) {
-            controller.spawnVehicle(id, type, route);
+            controller.spawnVehicle(id, type, route, selectedColor);
             // auto increment id for convenience
             idField.setText(id + "_x");
+
         }
+
     }
+
 }
