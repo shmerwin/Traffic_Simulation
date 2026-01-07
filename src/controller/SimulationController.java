@@ -44,10 +44,12 @@ public class SimulationController {
     private final String config;
 
     // simulation state
+    // Volatile keywords added to ensure thread visibility between GUI and Sim-Thread
     private volatile boolean isRunning = false;
-    private boolean isPaused = true;
+    private volatile boolean isPaused = true;
+    private volatile boolean isAutoMode = false;
     private Thread simThread;
-    private int simDelay = 100;
+    private volatile int simDelay = 100;
 
     private FxMainFrame view;
 
@@ -113,9 +115,7 @@ public class SimulationController {
 
             for (String laneId : laneIds) {
                 // visuals: add all lanes (except internal)
-
                 mapEdges.add(new EdgeWrapper(laneId, conn));
-
 
                 // logic: filter for cars only
                 if (!laneId.startsWith(":")) {
@@ -164,6 +164,10 @@ public class SimulationController {
                         refreshData(step);
                         calculateStatistics();
 
+                        if (isAutoMode && step % 10 == 0) {
+                            handleTrafficLightsAuto();
+                        }
+
                         // print report every 100 steps (console log)
                         if (step % 100 == 0) {
                             analyzeTraffic(step);
@@ -181,6 +185,24 @@ public class SimulationController {
                 stop();
             }
         }
+    }
+
+    private void handleTrafficLightsAuto() {
+        long currentTime = System.currentTimeMillis();
+        for (TrafficLightWrapper tls : trafficLights.values()) {
+            if (currentTime - tls.getLastSwitchTime() < 5000) {
+                continue;
+            }
+            int waiting = tls.getWaitingVehicleCount();
+            if (waiting > 2) {
+                tls.nextPhase();
+            }
+        }
+    }
+
+    public void setAutoMode(boolean active) {
+        this.isAutoMode = active;
+        log.info("Traffic Light Auto Mode: " + active);
     }
 
     private void refreshData(int step) throws Exception {
@@ -234,75 +256,82 @@ public class SimulationController {
 
     /**
      * adds a new vehicle to sumo safely
+     * spawns a thread to avoid blocking the GUI
      */
     public void spawnVehicle(String id, String type, String selection, javafx.scene.paint.Color color) {
         if (conn == null) return;
-
-        // spawn in a new thread to avoid blocking the gui
-        new Thread(() -> {
-            synchronized (traciLock) {
-                try {
-                    String fromEdge = null;
-
-                    // picks a safe edge
-                    if (selection == null || selection.equals("Random Route") || selection.startsWith("!")) {
-                        if (!drivableEdges.isEmpty()) {
-                            fromEdge = drivableEdges.get(random.nextInt(drivableEdges.size()));
-                        }
-                    } else if (drivableEdges.contains(selection)) {
-                        fromEdge = selection;
-                    }
-
-                    if (fromEdge == null) {
-                        log.warning("Cannot spawn: No drivable edge found.");
-                        return;
-                    }
-
-                    String routeId = generateRouteFrom(id, fromEdge);
-
-                    if (routeId != null) {
-                        // random offset to prevent invisible queue for cars
-                        double randomPos = 5.0 + (Math.random() * 35.0);
-                        double startSpeed = 3.0;
-
-                        // 0 is the depart time
-                        conn.do_job_set(Vehicle.add(id, type, routeId, 0, randomPos, startSpeed, (byte) 0));
-
-                        VehicleWrapper newCar = new VehicleWrapper(id, conn);
-                        newCar.setColor(color);
-
-                        activeVehicles.put(id, newCar);
-                        log.info("Spawned " + id + " with custom color.");
-
-                        // get total count immediately
-                        int totalCars = (int) conn.do_job_get(Simulation.getMinExpectedNumber());
-                        log.info("Spawned " + id + " on " + fromEdge + " (Total: " + totalCars + ")");
-                    } else {
-                        log.warning("No path from " + fromEdge);
-                    }
-
-                } catch (Exception e) {
-                    log.severe("Error spawning vehicle: " + e.getMessage());
-                }
-            }
-        }).start();
+        new Thread(() -> spawnVehicleInternal(id, type, selection, color)).start();
     }
 
-    public void startStressTest(String selectedEdge) {
+    /**
+     * Internal method containing the spawn logic.
+     * Synchronized to ensure thread safety during batch operations.
+     */
+    private void spawnVehicleInternal(String id, String type, String selection, javafx.scene.paint.Color color) {
+        synchronized (traciLock) {
+            try {
+                String fromEdge = null;
+
+                // picks a safe edge
+                if (selection == null || selection.equals("Random Route") || selection.startsWith("!")) {
+                    if (!drivableEdges.isEmpty()) {
+                        fromEdge = drivableEdges.get(random.nextInt(drivableEdges.size()));
+                    }
+                } else if (drivableEdges.contains(selection)) {
+                    fromEdge = selection;
+                }
+
+                if (fromEdge == null) {
+                    log.warning("Cannot spawn: No drivable edge found for selection: " + selection);
+                    return;
+                }
+
+                String routeId = generateRouteFrom(id, fromEdge);
+
+                if (routeId != null) {
+                    // random offset to prevent invisible queue for cars
+                    double randomPos = 5.0 + (Math.random() * 35.0);
+                    double startSpeed = 3.0;
+
+                    // 0 is the depart time
+                    conn.do_job_set(Vehicle.add(id, type, routeId, 0, randomPos, startSpeed, (byte) 0));
+
+                    VehicleWrapper newCar = new VehicleWrapper(id, conn);
+                    newCar.setColor(color);
+
+                    activeVehicles.put(id, newCar);
+
+                    // reduce logging noise during stress tests
+                    if (!id.startsWith("stress_")) {
+                        log.info("Spawned " + id + " on " + fromEdge);
+                    }
+                } else {
+                    log.warning("No path found from " + fromEdge);
+                }
+
+            } catch (Exception e) {
+                log.severe("Error spawning vehicle " + id + ": " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Starts a stress test by spawning 50 vehicles.
+     * Uses a single thread for the batch to minimize overhead.
+     */
+    public void startStressTest(String selectedEdge, javafx.scene.paint.Color color) {
         if (!isRunning) return;
+
         new Thread(() -> {
             log.info("Starting Stress Test (50 Cars) on edge: " + selectedEdge);
             long batchId = System.currentTimeMillis();
+
             for (int i = 0; i < 50; i++) {
                 String id = "stress_" + batchId + "_" + i;
-                javafx.scene.paint.Color randomColor = javafx.scene.paint.Color.color(
-                        random.nextDouble(),
-                        random.nextDouble(),
-                        random.nextDouble()
-                );
 
-                spawnVehicle(id, "DEFAULT_VEHTYPE", selectedEdge, randomColor);
-                try { Thread.sleep(10); } catch (InterruptedException e) {}
+                spawnVehicleInternal(id, "DEFAULT_VEHTYPE", selectedEdge, color);
+
+                try { Thread.sleep(50); } catch (InterruptedException e) {}
             }
             log.info("Stress Test Injection Loop Finished.");
         }).start();
@@ -313,8 +342,11 @@ public class SimulationController {
      */
     private String generateRouteFrom(String vehicleId, String fromEdge) throws Exception {
         if (drivableEdges.size() < 2) return null;
+
         int attempts = 0;
-        while (attempts < 15) {
+        int maxAttempts = 100; // Increased attempts to find valid routes in complex networks
+
+        while (attempts < maxAttempts) {
             String toEdge = drivableEdges.get(random.nextInt(drivableEdges.size()));
             if (fromEdge.equals(toEdge)) { attempts++; continue; }
 
@@ -323,7 +355,7 @@ public class SimulationController {
                 if (result instanceof SumoStage) {
                     SumoStage stage = (SumoStage) result;
                     if (stage.edges != null && !stage.edges.isEmpty()) {
-                        String newRouteId = "route_" + vehicleId + "_" + System.currentTimeMillis();
+                        String newRouteId = "route_" + vehicleId + "_" + System.nanoTime();
                         conn.do_job_set(Route.add(newRouteId, stage.edges));
                         return newRouteId;
                     }

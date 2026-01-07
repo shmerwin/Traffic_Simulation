@@ -23,7 +23,6 @@ public class VehicleWrapper {
     private double length, width;
     private Color color;
 
-
     /**
      * Instanciates a new VehicleWrapper object
      * @param id The id of the vehicle in sumo
@@ -74,28 +73,27 @@ public class VehicleWrapper {
         }
     }
 
-
-
     /**
      * Sets the color of the vehicle.
      * Converts color to SUMO color.
      * @param fxColor The new color (JavaFX).
      */
     public void setColor(Color fxColor) {
+        // Update local color immediately to ensure UI consistency
+        this.color = fxColor;
+
         try {
-            // Conversion: JavaFX uses 0.0-1.0, SUMO requires 0-255
+            // JavaFX uses 0.0-1.0, SUMO requires 0-255
             int r = (int) (fxColor.getRed() * 255);
             int g = (int) (fxColor.getGreen() * 255);
             int b = (int) (fxColor.getBlue() * 255);
 
             SumoColor sc = new SumoColor(r, g, b, 255);
-
             conn.do_job_set(Vehicle.setColor(id, sc));
 
-
-            this.color = fxColor;
         } catch (Exception e) {
-            log.log(Level.WARNING, "Could not set color for vehicle " + id, e);
+            // Log warning but allow execution to continue if vehicle is pending insertion
+            log.warning("Sumo color update deferred for " + id + " (Vehicle might be pending/queued)");
         }
     }
 
@@ -127,9 +125,6 @@ public class VehicleWrapper {
      * @throws Exception if data cannot be retrieved
      */
     public String getRoadId() throws Exception {
-        // Warning: This method uses the shared connection directly and might require external synchronization
-        // if called outside the main simulation loop.
         return (String) conn.do_job_get(Vehicle.getRoadID(id));
     }
-
 }
