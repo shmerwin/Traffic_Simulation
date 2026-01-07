@@ -5,7 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="229eced5-5076-4763-ae57-754b2c3f64ac" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/it/polito/appeal/traci/1.0/traci-1.0.jar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,6 +38,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Application.MainLauncher.executor": "Run",
+    "Maven.TrafficSimulation [clean,install,-U].executor": "Run",
     "Maven.TrafficSimulation [install:install-file...].executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
@@ -63,6 +64,7 @@
     <option name="myCommands">
       <command value="mvn install:install-file -Dfile=&quot;C:\Users\sherw\OneDrive\Desktop\traci-1.0.jar&quot; -DgroupId=it.polito.appeal -DartifactId=traci -Dversion=1.0 -Dpackaging=jar -DlocalRepositoryPath=repo" />
       <command value="mvn install:install-file -Dfile=C:\Users\sherw\OneDrive\Desktop\traci-1.0.jar -DgroupId=it.polito.appeal -DartifactId=traci -Dversion=1.0 -Dpackaging=jar -DlocalRepositoryPath=repo" />
+      <command value="mvn clean install -U" />
     </option>
   </component>
   <component name="RunManager">
@@ -143,7 +145,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1767787984504</updated>
-      <workItem from="1767787985784" duration="917000" />
+      <workItem from="1767787985784" duration="1819000" />
     </task>
     <servers />
   </component>

@@ -43,7 +43,7 @@ public class FxMainFrame {
         mapCanvas.widthProperty().bind(mapHolder.widthProperty());
         mapCanvas.heightProperty().bind(mapHolder.heightProperty());
         root.setCenter(mapHolder);
-        stage.setFullScreen(true);
+        stage.setMaximized(true);
 
         // ControlPanel (Top)
         controlPanel = new FxControlPanel(controller);
