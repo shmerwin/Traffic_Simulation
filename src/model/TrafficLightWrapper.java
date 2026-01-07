@@ -28,6 +28,10 @@ public class TrafficLightWrapper {
     private int currentPhase = 0;
     private int numPhases = 0;
 
+    private final List<String> controlledLanes = new ArrayList<>();
+    private long lastSwitchTime = 0;
+    private final long MIN_PHASE_DURATION = 5000;
+
     /**
      * Represents a single tl regardless of it being a junction or not
      */
@@ -47,6 +51,7 @@ public class TrafficLightWrapper {
     public TrafficLightWrapper(String id, SumoTraciConnection conn) {
         this.id = id;
         this.conn = conn;
+        loadLanes();
         Geometry();
         Logic();
     }
@@ -123,6 +128,7 @@ public class TrafficLightWrapper {
                 } catch (Exception ex) {}
             }
         }
+        this.lastSwitchTime = System.currentTimeMillis();
     }
 
     /**
@@ -149,10 +155,38 @@ public class TrafficLightWrapper {
             default: return Color.DARKGRAY;
         }
     }
+
+    private void loadLanes() {
+        try {
+            SumoStringList lanes = (SumoStringList) conn.do_job_get(Trafficlight.getControlledLanes(id));
+            controlledLanes.addAll(lanes);
+        } catch (Exception e) {
+            log.warning("Could not load lanes for TLS " + id);
+        }
+    }
+
+    /**
+     * Counts how many vehicles are waiting in a lane with a tls
+     * @return the number of waiting vehicles
+     */
+    public int getWaitingVehicleCount(){
+        int count = 0;
+        try {
+            for (String laneId : controlledLanes) {
+                int waiting = (int) conn.do_job_get(Lane.getLastStepHaltingNumber(laneId));
+                count += waiting;
+            }
+        } catch (Exception e) {
+        }
+        return count;
+    }
+
+
     public String getId() { return id; }
     public String getCurrentState() { return currentState; }
     public int getCurrentPhase() { return currentPhase; }
     public int getNumPhases() { return numPhases; }
     public List<SignalPoint> getSignalPoints() { return signalPoints; }
+    public long getLastSwitchTime() { return lastSwitchTime; }
     }
 

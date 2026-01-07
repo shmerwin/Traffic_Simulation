@@ -67,10 +67,12 @@ public class FxVehiclePanel extends VBox {
         stressBtn.setOnAction(e -> {
             if (this.controller != null) {
                 String selectedRoute = routeSelector.getValue();
+                Color selectedColor = colorPicker.getValue();
+
                 if (selectedRoute == null || selectedRoute.startsWith("No routes")) {
-                    this.controller.startStressTest("Random Route");
+                    this.controller.startStressTest("Random Route", selectedColor);
                 } else {
-                    this.controller.startStressTest(selectedRoute);
+                    this.controller.startStressTest(selectedRoute, selectedColor);
                 }
             }
         });
@@ -136,9 +138,6 @@ public class FxVehiclePanel extends VBox {
             controller.spawnVehicle(id, type, route, selectedColor);
             // auto increment id for convenience
             idField.setText(id + "_x");
-
         }
-
     }
-
 }

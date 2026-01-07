@@ -46,10 +46,11 @@ public class FxControlPanel extends HBox {
 
         /**
          * Listener to observe changes to the slider's value
-         * Using the new value to update the simulation speed
+         * Using the new value to update the simulation speed immediately.
+         * Removed 'isValueChanging' check to ensure updates are always sent.
          */
         speedSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if (!speedSlider.isValueChanging()) {
+            if (controller != null) {
                 controller.setSpeedMultiplier(newVal.intValue());
             }
         });
