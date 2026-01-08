@@ -17,3 +17,23 @@ edgeData.xml
 
 .DS_Store
 Thumbs.db
+
+# Java / Maven
+target/
+*.class
+*.log
+
+# IntelliJ / Eclipse
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# JavaFX / JDK bundles (do NOT commit SDKs)
+openjfx-*/
+javafx-sdk-*/
+jdk-*/
+*.exe
+*.zip
+*.msi
