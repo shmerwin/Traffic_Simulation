@@ -18,6 +18,7 @@ public class EdgeWrapper {
     private final SumoTraciConnection conn;
     private List<SumoPosition2D> shapePoints;
     private double width;
+    private double length;
 
     /**
      * Makes an instance of an edge
@@ -46,6 +47,8 @@ public class EdgeWrapper {
         try {
             // gets the width of the edge to draw it later
             this.width = (double) conn.do_job_get(Lane.getWidth(id));
+            // important for hotspots
+            this.length = (double) conn.do_job_get(Lane.getLength(id));
             SumoGeometry geometry = (SumoGeometry) conn.do_job_get(Lane.getShape(id));
 
             if (geometry != null && geometry.coords != null) {
@@ -59,6 +62,7 @@ public class EdgeWrapper {
         }
     }
     public String getId() { return id; }
+    public double getLength() { return length; }
 
     /**
      * for the drawing of the edges we have this method to get their points

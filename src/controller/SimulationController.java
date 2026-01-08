@@ -419,6 +419,43 @@ public class SimulationController {
         } catch (Exception e) { return new ArrayList<>(); }
     }
 
+    /**
+     * method for density of edges
+     */
+    public double getVehicleDensity(EdgeWrapper edge) {
+        try {
+            int count = edge.getVehicle();
+
+            if (edge.getLength() > 0) {
+                return (double) count / edge.getLength();
+            }
+        } catch (Exception e) {
+            return 0;
+        }
+        return 0;
+    }
+
+
+
+    /**
+     * method to return every edge with hotspot
+     */
+    public List<String> getCongestionHotspots() {
+        List<String> hotspots = new ArrayList<>();
+        for (EdgeWrapper edge : mapEdges) {
+            try {
+
+                double meanSpeed = (double) conn.do_job_get(Lane.getLastStepMeanSpeed(edge.getId()));
+                //if cars are on this edge and the meanSpeed is below 2m/s
+                if (edge.getVehicle() > 0 && meanSpeed < 2.0) {
+                    hotspots.add(edge.getId());
+                }
+            } catch (Exception e) {
+            }
+        }
+        return hotspots;
+    }
+
     // getters
     public double getMapWidth() { return mapMaxX - mapMinX; }
     public double getMapHeight() { return mapMaxY - mapMinY; }
