@@ -22,6 +22,7 @@ public class VehicleWrapper {
     private double x, y, angle, speed;
     private double length, width;
     private Color color;
+    private final long spawnTime;
 
     /**
      * Instanciates a new VehicleWrapper object
@@ -31,6 +32,7 @@ public class VehicleWrapper {
     public VehicleWrapper(String id, SumoTraciConnection conn) {
         this.id = id;
         this.conn = conn;
+        this.spawnTime = System.currentTimeMillis();
         fetchStaticData();
     }
 
@@ -108,6 +110,12 @@ public class VehicleWrapper {
         } catch (Exception e) {
             log.log(Level.WARNING, "Could not set speed for vehicle " + id, e);
         }
+    }
+    /**
+     * method to get the traveltime in seconds
+     */
+    public long getTravelTimeSeconds() {
+        return (System.currentTimeMillis() - spawnTime) / 1000;
     }
 
     public String getId() { return id;}
