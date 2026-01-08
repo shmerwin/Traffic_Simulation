@@ -9,6 +9,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.VBox;
 import java.util.Map;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Alert;
+
 
 /**
  * panel to inspect and control traffic lights manually
@@ -21,6 +24,9 @@ public class FxTrafficLightPanel extends VBox {
     private Label statusLabel;
     private Label phaseLabel;
     private Button nextPhaseButton;
+    private TextField phaseDurationField;
+    private Button setDurationButton;
+
 
     public FxTrafficLightPanel(SimulationController controller) {
         this.controller = controller;
@@ -55,6 +61,16 @@ public class FxTrafficLightPanel extends VBox {
         pane3.setCollapsible(false);
 
         getChildren().addAll(pane1, pane2, pane3);
+
+        phaseDurationField = new TextField("10");
+        phaseDurationField.setPromptText("seconds");
+
+        setDurationButton = new Button("Set Phase Duration (s)");
+        setDurationButton.setMaxWidth(Double.MAX_VALUE);
+        setDurationButton.setOnAction(e -> setPhaseDuration());
+
+        bottomBox.getChildren().addAll(phaseDurationField, setDurationButton);
+
     }
 
     /**
@@ -129,4 +145,30 @@ public class FxTrafficLightPanel extends VBox {
             }
         }
     }
+
+    /**
+     * Read the duration from the text field and apply it to the currently selected traffic light
+     */
+    private void setPhaseDuration() {
+        if (controller == null) return;
+
+        String selectedId = tlsSelector.getValue();
+        if (selectedId == null) return;
+
+        try {
+            double seconds = Double.parseDouble(phaseDurationField.getText().trim());
+            if (seconds <= 0) throw new NumberFormatException();
+
+            // Recommended: call through controller (thread-safe)
+            controller.setTrafficLightPhaseDuration(selectedId, seconds);
+            updateInfo();
+
+        } catch (NumberFormatException ex) {
+            Alert a = new Alert(Alert.AlertType.WARNING);
+            a.setHeaderText("Invalid duration");
+            a.setContentText("Please enter a positive number (seconds).");
+            a.showAndWait();
+        }
+    }
+
 }

@@ -50,6 +50,8 @@ public class SimulationController {
     private volatile boolean isAutoMode = false;
     private Thread simThread;
     private volatile int simDelay = 100;
+    private volatile String activeFilter = "All";
+
 
     private FxMainFrame view;
 
@@ -455,6 +457,30 @@ public class SimulationController {
         }
         return hotspots;
     }
+
+    public void setActiveFilter(String filter) {
+        this.activeFilter = (filter == null) ? "All" : filter;
+        if (view != null) Platform.runLater(view::refresh);
+    }
+
+    public String getActiveFilter() {
+        return activeFilter;
+    }
+
+    /**
+     * Set the duration of the current phase for a traffic light
+     * @param tlsId: traffic light id
+     * @param seconds: duration in seconds
+     */
+    public void setTrafficLightPhaseDuration(String tlsId, double seconds) {
+        if (conn == null) return;
+        synchronized (traciLock) {
+            TrafficLightWrapper tls = trafficLights.get(tlsId);
+            if (tls != null) tls.setPhaseDuration(seconds);
+        }
+    }
+
+
 
     // getters
     public double getMapWidth() { return mapMaxX - mapMinX; }

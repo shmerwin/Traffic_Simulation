@@ -144,13 +144,21 @@ public class FxMapCanvas extends Canvas {
             }
         }
 
-        // Draw Vehicles with Enhanced Visibility
+        // Draw Vehicles with filter
         Map<String, VehicleWrapper> vehicles = controller.getActiveVehicles();
+        int shownCars = 0;
+
         if (vehicles != null) {
-            for (VehicleWrapper car : vehicles.values()){
-                drawVehicle(gc, car, s);
+            String filter = controller.getActiveFilter(); // "All", "Red Vehicles", "Fast Vehicles"
+
+            for (VehicleWrapper car : vehicles.values()) {
+                if (matchesFilter(car, filter)) {
+                    drawVehicle(gc, car, s);
+                    shownCars++;
+                }
             }
         }
+
 
         // Draw Traffic Lights
         Map<String, TrafficLightWrapper> lights = controller.getTrafficLights();
@@ -167,7 +175,7 @@ public class FxMapCanvas extends Canvas {
         // HUD
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("SansSerif", FontWeight.BOLD, 12));
-        int carCount = (vehicles != null) ? vehicles.size() : 0;
+        int carCount = shownCars;
         int streetCount = (edges != null) ? edges.size() : 0;
         gc.fillText("Cars: " + carCount + " | Streets: " + streetCount, 20, 30);
         gc.fillText("Zoom: " + String.format("%.2f", zoom), 20, 50);
@@ -285,6 +293,22 @@ public class FxMapCanvas extends Canvas {
 
         gc.restore();
     }
+
+    private boolean matchesFilter(VehicleWrapper car, String filter) {
+        if (filter == null || filter.equals("All")) return true;
+
+        if (filter.equals("Red Vehicles")) {
+            Color c = car.getColor();
+            return c != null && c.getRed() > 0.6 && c.getGreen() < 0.4 && c.getBlue() < 0.4;
+        }
+
+        if (filter.equals("Fast Vehicles")) {
+            return car.getSpeed() * 3.6 >= 50.0; // km/h threshold
+        }
+
+        return true;
+    }
+
 
     private void drawSignal(GraphicsContext gc, TrafficLightWrapper.SignalPoint signal, double currentScale) {
         double baseSizeMeters = 2.5;
