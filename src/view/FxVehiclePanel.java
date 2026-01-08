@@ -18,6 +18,8 @@ public class FxVehiclePanel extends VBox {
     private ComboBox<String> typeSelector;
     private ComboBox<String> routeSelector;
     private ColorPicker colorPicker;
+    private ComboBox<String> filterSelector;
+
 
     public FxVehiclePanel(SimulationController controller) {
         this.controller = controller;
@@ -78,6 +80,20 @@ public class FxVehiclePanel extends VBox {
         });
 
         getChildren().addAll(pane1, infoLabel, loadBtn, spawnBtn, stressBtn);
+
+        grid.add(new Label("Filter:"), 0, 4);
+
+        filterSelector = new ComboBox<>();
+        filterSelector.getItems().addAll("All", "Red Vehicles", "Fast Vehicles");
+        filterSelector.setValue("All");
+        filterSelector.setMaxWidth(Double.MAX_VALUE);
+
+        filterSelector.setOnAction(e -> {
+            if (controller != null) controller.setActiveFilter(filterSelector.getValue());
+        });
+
+        grid.add(filterSelector, 1, 4);
+
     }
 
     /**
