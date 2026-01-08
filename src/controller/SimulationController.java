@@ -162,7 +162,7 @@ public class SimulationController {
 
                         // get current data from sumo
                         refreshData(step);
-                        calculateStatistics();
+                        getVehicleSpeed();
 
                         if (isAutoMode && step % 10 == 0) {
                             handleTrafficLightsAuto();
@@ -232,9 +232,9 @@ public class SimulationController {
     }
 
     /**
-     * calculates simple stats for the history graph
+     * method to calculate averagespeed
      */
-    private void calculateStatistics() {
+    private void getVehicleSpeed() {
         if (activeVehicles.isEmpty()) {
             currentAvgSpeed = 0.0;
         } else {
@@ -420,7 +420,7 @@ public class SimulationController {
     }
 
     /**
-     * method for density of edges
+     * method for density of edges for stats
      */
     public double getVehicleDensity(EdgeWrapper edge) {
         try {
@@ -438,7 +438,7 @@ public class SimulationController {
 
 
     /**
-     * method to return every edge with hotspot
+     * method to return every edge with hotspot for stats
      */
     public List<String> getCongestionHotspots() {
         List<String> hotspots = new ArrayList<>();
