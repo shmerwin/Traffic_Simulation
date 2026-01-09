@@ -74,23 +74,55 @@ public class TrafficLightWrapper {
         }
     }
     /**
-     * Loads the traffic light program logic
-     * to see how many phases there are
+     * Loads the traffic light program logic using Reflection
+     * Tries both Getter-Method and Direct-Field access to support different TraaS versions
      */
     @SuppressWarnings("unchecked")
     private void Logic() {
+        try {
+            Object controllerObj = conn.do_job_get(Trafficlight.getCompleteRedYellowGreenDefinition(id));
+            String currentProgId = (String) conn.do_job_get(Trafficlight.getProgram(id));
+
+            if (controllerObj == null) return;
+
+            Map<String, SumoTLSProgram> programs = null;
+            Class<?> clazz = controllerObj.getClass();
+
+            // Try Getter-Method getPrograms
             try {
-                Object Controller = conn.do_job_get(Trafficlight.getCompleteRedYellowGreenDefinition(id));
-                String currentProgId = (String) conn.do_job_get(Trafficlight.getProgram(id));
-                Method getProgramsMethod = Controller.getClass().getMethod("getPrograms");
-                Map<String, SumoTLSProgram> programs = (Map<String, SumoTLSProgram>) getProgramsMethod.invoke(Controller);
-                if (programs != null && programs.containsKey(currentProgId)) {
-                    this.numPhases = programs.get(currentProgId).phases.size();
-                }
-            } catch (Exception e) {
-                // if number of phases cant be loaded
+                Method getProgramsMethod = clazz.getMethod("getPrograms");
+                programs = (Map<String, SumoTLSProgram>) getProgramsMethod.invoke(controllerObj);
+            } catch (NoSuchMethodException e) {
+                // method not found
             }
+
+            // Try direct field access "programs"
+            if (programs == null) {
+                try {
+                    java.lang.reflect.Field programsField = clazz.getField("programs");
+                    programs = (Map<String, SumoTLSProgram>) programsField.get(controllerObj);
+                } catch (NoSuchFieldException e) {
+                    log.warning("TLS " + id + ": Logic detection failed (unknown TraaS structure).");
+                }
+            }
+
+            // check if programs were found and assign phase count
+            if (programs != null) {
+                if (programs.containsKey(currentProgId)) {
+                    this.numPhases = programs.get(currentProgId).phases.size();
+                    log.info("TLS " + id + " loaded with " + numPhases + " phases.");
+                } else if (!programs.isEmpty()) {
+                    // fallback to first available program if ID mismatch
+                    this.numPhases = programs.values().iterator().next().phases.size();
+                }
+            }
+
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Error analyzing TLS logic for " + id, e);
+            this.numPhases = 0;
+        }
     }
+
     /**
      * Updates the current state and phase from SUMO and applies the corresponding
      * color to all signal points
@@ -107,28 +139,35 @@ public class TrafficLightWrapper {
     }
     /**
      * Switches the traffic light to the next phase.
-     * Uses modulo division if number of phases is known
-     * safe try-catch fallback to loop to phase 0 on failure
+     * Uses modulo arithmetic to safely cycle through phases.
+     * Falls back to phase 0 if the total phase count is unknown.
      */
     public void nextPhase() {
-        if (numPhases > 0) {
-            int next = (currentPhase + 1) % numPhases;
-            try {
-                conn.do_job_set(Trafficlight.setPhase(id, next));
-                updateData();
-            } catch (Exception e) {}
-        } else {
-            try {
-                conn.do_job_set(Trafficlight.setPhase(id, currentPhase + 1));
-                updateData();
-            } catch (Exception e) {
-                try {
-                    conn.do_job_set(Trafficlight.setPhase(id, 0));
-                    updateData();
-                } catch (Exception ex) {}
-            }
+        // attempt to reload logic if phase count is missing
+        if (numPhases <= 0) {
+            Logic();
         }
-        this.lastSwitchTime = System.currentTimeMillis();
+
+        try {
+            int nextIndex;
+
+            if (numPhases > 0) {
+                // calculate next phase using modulo to create a loop
+                nextIndex = (currentPhase + 1) % numPhases;
+            } else {
+                // safety fallback: reset to 0 to prevent crashes
+                nextIndex = 0;
+            }
+
+            conn.do_job_set(Trafficlight.setPhase(id, nextIndex));
+            updateData();
+
+            // update timestamp for logic
+            this.lastSwitchTime = System.currentTimeMillis();
+
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "Error switching phase for TLS " + id, e);
+        }
     }
 
     /**

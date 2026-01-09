@@ -44,7 +44,6 @@ public class SimulationController {
     private final String config;
 
     // simulation state
-    // Volatile keywords added to ensure thread visibility between GUI and Sim-Thread
     private volatile boolean isRunning = false;
     private volatile boolean isPaused = true;
     private volatile boolean isAutoMode = false;
@@ -78,6 +77,7 @@ public class SimulationController {
     public void startConnection() {
         try {
             if (conn == null) {
+                // Restore standard connection logic without manual port handling
                 conn = new SumoTraciConnection(sumo, config);
                 conn.runServer();
                 isRunning = true;
@@ -107,11 +107,11 @@ public class SimulationController {
     }
 
     /**
-     * loads map data and separates visuals from logic
+     * loads map data, separates visuals from logic, and validates edges.
      */
     private void loadMapData() {
         try {
-            log.info("Loading map data");
+            log.info("Loading map data...");
             SumoStringList laneIds = (SumoStringList) conn.do_job_get(Lane.getIDList());
             Set<String> safeEdgeSet = new HashSet<>();
 
@@ -122,9 +122,15 @@ public class SimulationController {
                 // logic: filter for cars only
                 if (!laneId.startsWith(":")) {
                     try {
+                        // Check explicit permissions
                         SumoStringList allowed = (SumoStringList) conn.do_job_get(Lane.getAllowed(laneId));
-                        // if empty (all allowed) or contains "passenger"
-                        if (allowed.isEmpty() || allowed.contains("passenger")) {
+                        SumoStringList disallowed = (SumoStringList) conn.do_job_get(Lane.getDisallowed(laneId));
+
+                        // A lane is valid if it allows 'passenger' OR allows everything, AND does not explicitly forbid 'passenger'
+                        boolean isAllowed = allowed.isEmpty() || allowed.contains("passenger");
+                        boolean isNotForbidden = disallowed == null || !disallowed.contains("passenger");
+
+                        if (isAllowed && isNotForbidden) {
                             String edgeId = laneId.substring(0, laneId.lastIndexOf('_'));
                             safeEdgeSet.add(edgeId);
                         }
@@ -137,6 +143,9 @@ public class SimulationController {
             drivableEdges.addAll(safeEdgeSet);
             Collections.sort(drivableEdges);
 
+            // Validation: Remove broken edges that cause crashes
+            validateNetwork();
+
             // load traffic lights
             SumoStringList tlsIds = (SumoStringList) conn.do_job_get(Trafficlight.getIDList());
             for (String id : tlsIds) {
@@ -148,6 +157,31 @@ public class SimulationController {
         } catch (Exception e) {
             log.severe("Error loading map: " + e.getMessage());
         }
+    }
+
+    /**
+     * Validates all loaded edges by asking SUMO if a route can be computed.
+     * Removes edges that cause TraCI errors (sometimes there appears an error
+     * with invalid starting edge)
+     */
+    private void validateNetwork() {
+        log.info("Validating " + drivableEdges.size() + " potential edges (this may take a moment)...");
+        Iterator<String> it = drivableEdges.iterator();
+        int removed = 0;
+
+        while (it.hasNext()) {
+            String edge = it.next();
+            try {
+                // Try to find a route from the edge to itself.
+                // If the edge is invalid for passenger cars SUMO throws an error
+                conn.do_job_get(Simulation.findRoute(edge, edge, "DEFAULT_VEHTYPE", 0.0, 0));
+            } catch (Exception e) {
+                // If finding a route fails this edge is dangerous to spawn on
+                it.remove();
+                removed++;
+            }
+        }
+        log.info("Network validation complete. Removed " + removed + " invalid edges. Remaining: " + drivableEdges.size());
     }
 
     /**
@@ -225,11 +259,9 @@ public class SimulationController {
             car.updateData();
         }
 
-        // update tls every 10 steps for performance
-        if (step % 10 == 0) {
-            for (TrafficLightWrapper tls : trafficLights.values()) {
-                tls.updateData();
-            }
+        // UPDATE TRAFFIC LIGHTS: Sync every step
+        for (TrafficLightWrapper tls : trafficLights.values()) {
+            tls.updateData();
         }
     }
 
@@ -312,6 +344,7 @@ public class SimulationController {
                 }
 
             } catch (Exception e) {
+                // Catch errors to prevent thread death
                 log.severe("Error spawning vehicle " + id + ": " + e.getMessage());
             }
         }
@@ -330,9 +363,7 @@ public class SimulationController {
 
             for (int i = 0; i < 50; i++) {
                 String id = "stress_" + batchId + "_" + i;
-
                 spawnVehicleInternal(id, "DEFAULT_VEHTYPE", selectedEdge, color);
-
                 try { Thread.sleep(50); } catch (InterruptedException e) {}
             }
             log.info("Stress Test Injection Loop Finished.");
@@ -346,7 +377,7 @@ public class SimulationController {
         if (drivableEdges.size() < 2) return null;
 
         int attempts = 0;
-        int maxAttempts = 100; // Increased attempts to find valid routes in complex networks
+        int maxAttempts = 20; // Reduced to prevent long freezes
 
         while (attempts < maxAttempts) {
             String toEdge = drivableEdges.get(random.nextInt(drivableEdges.size()));
@@ -362,7 +393,9 @@ public class SimulationController {
                         return newRouteId;
                     }
                 }
-            } catch (Exception e) {}
+            } catch (Exception e) {
+                // route not found try next
+            }
             attempts++;
         }
         return null;
@@ -421,39 +454,25 @@ public class SimulationController {
         } catch (Exception e) { return new ArrayList<>(); }
     }
 
-    /**
-     * method for density of edges for stats
-     */
     public double getVehicleDensity(EdgeWrapper edge) {
         try {
             int count = edge.getVehicle();
-
             if (edge.getLength() > 0) {
                 return (double) count / edge.getLength();
             }
-        } catch (Exception e) {
-            return 0;
-        }
+        } catch (Exception e) { return 0; }
         return 0;
     }
 
-
-
-    /**
-     * method to return every edge with hotspot for stats
-     */
     public List<String> getCongestionHotspots() {
         List<String> hotspots = new ArrayList<>();
         for (EdgeWrapper edge : mapEdges) {
             try {
-
                 double meanSpeed = (double) conn.do_job_get(Lane.getLastStepMeanSpeed(edge.getId()));
-                //if cars are on this edge and the meanSpeed is below 2m/s
                 if (edge.getVehicle() > 0 && meanSpeed < 2.0) {
                     hotspots.add(edge.getId());
                 }
-            } catch (Exception e) {
-            }
+            } catch (Exception e) {}
         }
         return hotspots;
     }
@@ -467,11 +486,6 @@ public class SimulationController {
         return activeFilter;
     }
 
-    /**
-     * Set the duration of the current phase for a traffic light
-     * @param tlsId: traffic light id
-     * @param seconds: duration in seconds
-     */
     public void setTrafficLightPhaseDuration(String tlsId, double seconds) {
         if (conn == null) return;
         synchronized (traciLock) {
@@ -479,8 +493,6 @@ public class SimulationController {
             if (tls != null) tls.setPhaseDuration(seconds);
         }
     }
-
-
 
     // getters
     public double getMapWidth() { return mapMaxX - mapMinX; }
@@ -496,5 +508,4 @@ public class SimulationController {
     public List<EdgeWrapper> getMapEdges() { return mapEdges; }
     public Map<String, VehicleWrapper> getActiveVehicles() { return activeVehicles; }
     public Map<String, TrafficLightWrapper> getTrafficLights() { return trafficLights; }
-
 }
