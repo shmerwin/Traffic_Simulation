@@ -22,6 +22,7 @@ public class VehicleWrapper {
     private double x, y, angle, speed;
     private double length, width;
     private Color color;
+    private String type;
     private final long spawnTime;
 
     /**
@@ -47,10 +48,12 @@ public class VehicleWrapper {
             this.color = Color.rgb(r, g, b);
             this.length = (double) conn.do_job_get(Vehicle.getLength(id));
             this.width = (double) conn.do_job_get(Vehicle.getWidth(id));
+            this.type = (String) conn.do_job_get(Vehicle.getWidth(id));
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed to fetch static data for vehicle " + id, e);
             this.color = Color.YELLOW;
             this.length = 5.0; this.width = 2.0;
+            this.type = "Unknown"; // for wrong request
         }
     }
 
@@ -126,6 +129,8 @@ public class VehicleWrapper {
     public double getLength() { return length; }
     public double getWidth() { return width; }
     public Color getColor() { return color; }
+
+    public String getType() { return type; } //getter for the type
 
     /**
      * Method for seeing on which road which car is

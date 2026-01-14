@@ -3,6 +3,8 @@ package view;
 import controller.SimulationController;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Alert;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -62,7 +64,59 @@ public class FxMapCanvas extends Canvas {
             lastMouseY = e.getY();
             draw();
         });
+
+        setOnMouseClicked(e -> handleMouseClick(e));
+
     }
+
+    private void handleMouseClick(MouseEvent e) {
+        if (controller == null) return;
+
+        double w = getWidth();
+        double h = getHeight();
+        double s = getScale();
+
+        //wir rechnen pixel in meter um
+        double clickSimX = (e.getX() - w / 2) / s + camX;
+        double clickSimY = camY - (e.getY() - h / 2) / s;
+
+
+        Map<String, VehicleWrapper> vehicles = controller.getActiveVehicles();
+        if (vehicles == null) return;
+
+        for (VehicleWrapper car : vehicles.values()) {
+            double dist = Math.hypot(car.getX() - clickSimX, car.getY() - clickSimY);
+
+            double hitRadius = Math.max(2.0, car.getLength() / 2.0);
+
+            if (dist < hitRadius) {
+                showVehicleInfo(car);
+                return;
+            }
+        }
+
+    }
+
+
+    private void showVehicleInfo(VehicleWrapper car) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Vehicle Info");
+        alert.setHeaderText("Vehicle Details");
+
+        String typeStr = (car.getType() != null) ? car.getType() : "Unknown";
+
+        String infoText = "ID: " + car.getId() + "\n" +
+                "Type: " + typeStr + "\n" +
+                "Speed: " + String.format("%.2f km/h", car.getSpeed() * 3.6) + "\n" +
+                "Color: " + car.getColor().toString();
+
+        alert.setContentText(infoText);
+        alert.showAndWait();
+
+
+
+    }
+
 
     @Override
     public boolean isResizable() { return true; }
