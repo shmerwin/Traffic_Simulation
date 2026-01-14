@@ -4,7 +4,10 @@ import controller.SimulationController;
 import javafx.scene.chart.*;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import model.VehicleWrapper;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +18,15 @@ import model.EdgeWrapper;
 
 
 
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.stage.FileChooser;
+import javafx.stage.Window;
+import java.io.File;
+import java.io.IOException;
+
+
 /**
  * Panel for live statistics
  */
@@ -23,6 +35,10 @@ public class FxStatisticsPanel extends VBox {
     private SimulationController controller;
     private Label avgSpeedLabel;
     private Label totalVehiclesLabel;
+
+    private Button exportCsvButton;
+    private Button exportPdfButton;
+
 
     //speedchart
     private LineChart<Number, Number> lineChart;
@@ -47,8 +63,29 @@ public class FxStatisticsPanel extends VBox {
         setupSpeedChart();
         setupHistogram();
 
-        getChildren().addAll(avgSpeedLabel, totalVehiclesLabel, lineChart, travelTimeChart, edgeDensityChart);
+        HBox exportBar = setupExportBar();
 
+        // Top section: labels
+        HBox topSection = new HBox(20);
+        topSection.getChildren().addAll(avgSpeedLabel, totalVehiclesLabel);
+
+        // Middle section: charts (grows to fill space)
+        VBox chartsSection = new VBox(10);
+        chartsSection.getChildren().addAll(lineChart, travelTimeChart);
+        VBox.setVgrow(chartsSection, Priority.ALWAYS);
+
+        // Bottom section: empty space on left, buttons on right
+        HBox bottomSection = new HBox();
+        bottomSection.setSpacing(10);
+        bottomSection.setPadding(new Insets(10, 0, 0, 0));
+
+        VBox spacer = new VBox();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        bottomSection.getChildren().addAll(spacer, exportBar);
+
+        // Assemble everything
+        getChildren().addAll(topSection, chartsSection, bottomSection);
     }
 
     private void setupSpeedChart() {
@@ -99,6 +136,98 @@ public class FxStatisticsPanel extends VBox {
 
     }
 
+    private HBox setupExportBar() {
+        exportCsvButton = new Button("Export CSV...");
+        exportPdfButton = new Button("Export PDF...");
+
+        exportCsvButton.setOnAction(e -> exportCsv());
+        exportPdfButton.setOnAction(e -> exportPdf());
+
+        HBox bar = new HBox(10, exportCsvButton, exportPdfButton);
+        return bar;
+    }
+
+    private void exportCsv() {
+        if (controller == null) {
+            showAlert(Alert.AlertType.WARNING, "Export not available", "Controller not connected.");
+            return;
+        }
+
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Export CSV Report");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV files (*.csv)", "*.csv"));
+        chooser.setInitialFileName("simulation_report.csv");
+
+        File file = chooser.showSaveDialog(getWindowSafe());
+        if (file == null) return;
+
+        exportCsvButton.setDisable(true);
+
+        new Thread(() -> {
+            try {
+                controller.exportCsvReport(file);
+                Platform.runLater(() -> showAlert(Alert.AlertType.INFORMATION,
+                        "Export successful",
+                        "CSV report saved to:\n" + file.getAbsolutePath()));
+            } catch (IOException ex) {
+                Platform.runLater(() -> showAlert(Alert.AlertType.ERROR,
+                        "Export failed",
+                        "Could not write report:\n" + ex.getMessage()));
+            } finally {
+                Platform.runLater(() -> exportCsvButton.setDisable(false));
+            }
+        }, "csv-export").start();
+    }
+
+    private void exportPdf() {
+        if (controller == null) {
+            showAlert(Alert.AlertType.WARNING, "Export not available", "Controller not connected.");
+            return;
+        }
+
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Export PDF Report");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF files (*.pdf)", "*.pdf"));
+        chooser.setInitialFileName("simulation_report.pdf");
+
+        File file = chooser.showSaveDialog(getWindowSafe());
+        if (file == null) return;
+
+        exportPdfButton.setDisable(true);
+
+        new Thread(() -> {
+            try {
+                controller.exportPdfReport(file);
+                Platform.runLater(() -> showAlert(Alert.AlertType.INFORMATION,
+                        "Export successful",
+                        "PDF report saved to:\n" + file.getAbsolutePath()));
+            } catch (Exception ex) {
+                Platform.runLater(() -> showAlert(Alert.AlertType.ERROR,
+                        "Export failed",
+                        "Could not write report:\n" + ex.getMessage()));
+            } finally {
+                Platform.runLater(() -> exportPdfButton.setDisable(false));
+            }
+        }, "pdf-export").start();
+    }
+
+
+
+    private Window getWindowSafe() {
+        return (getScene() != null) ? getScene().getWindow() : null;
+    }
+
+    private void showAlert(Alert.AlertType type, String title, String message) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        Window owner = getWindowSafe();
+        if (owner != null) alert.initOwner(owner);
+        alert.show();
+    }
+
+
     public void update() {
         if (controller == null) return;
 
@@ -120,6 +249,15 @@ public class FxStatisticsPanel extends VBox {
         int[] bins = controller.getTravelTimeBins();
         String[] labels = {"<30s", "1m", "2m", "5m", ">5m"};
 
+        for (VehicleWrapper car : vehicles.values()) {
+            long time = car.getTravelTimeSeconds(); //
+            if (time <= 30) bins[0]++;
+            else if (time <= 60) bins[1]++;
+            else if (time <= 120) bins[2]++;
+            else if (time <= 300) bins[3]++;
+            else bins[4]++;
+        }
+
         distributionSeries.getData().clear();
         for (int i = 0; i < bins.length; i++) {
             distributionSeries.getData().add(new XYChart.Data<>(labels[i], bins[i]));
@@ -137,8 +275,4 @@ public class FxStatisticsPanel extends VBox {
 
 
     }
-
-
-
-
 }
