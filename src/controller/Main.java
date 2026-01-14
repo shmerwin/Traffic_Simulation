@@ -14,7 +14,7 @@ import javafx.application.Platform;
 public class Main extends Application {
 
     private static final Logger log = Logger.getLogger(Main.class.getName());
-    private SimulationController controller;
+    private SimulationController controller;    //Instanzvariable
 
     /**
      * Initializes the simulation controller and the main GUI window
@@ -32,10 +32,11 @@ public class Main extends Application {
     }
 
 
+
     // This method is called when the application is shutting down (closing the window)
     @Override
     public void stop() throws Exception {
-        if (controller != null) {
+            if (controller != null) {
             controller.stop();
         }
         // Perform standard JavaFX cleanup

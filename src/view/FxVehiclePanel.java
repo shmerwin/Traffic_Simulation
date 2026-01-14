@@ -19,7 +19,7 @@ public class FxVehiclePanel extends VBox {
     private ComboBox<String> routeSelector;
     private ColorPicker colorPicker;
     private ComboBox<String> filterSelector;
-
+    private Spinner<Double> speedSpinner;
 
     public FxVehiclePanel(SimulationController controller) {
         this.controller = controller;
@@ -48,6 +48,12 @@ public class FxVehiclePanel extends VBox {
         routeSelector = new ComboBox<>();
         routeSelector.setMaxWidth(Double.MAX_VALUE);
         grid.add(routeSelector, 1, 2);
+
+        grid.add(new Label("Speed (km/h):"), 0, 4);
+        speedSpinner = new Spinner<>(0.0, 200.0, 50.0, 5.0);
+        speedSpinner.setEditable(true);
+        speedSpinner.setMaxWidth(Double.MAX_VALUE);
+        grid.add(speedSpinner, 1, 4);
 
         TitledPane pane1 = new TitledPane("Spawn Vehicle", grid);
         pane1.setCollapsible(false);
@@ -81,10 +87,24 @@ public class FxVehiclePanel extends VBox {
 
         getChildren().addAll(pane1, infoLabel, loadBtn, spawnBtn, stressBtn);
 
-        grid.add(new Label("Filter:"), 0, 4);
+        grid.add(new Label("Filter:"), 0, 5);
 
         filterSelector = new ComboBox<>();
-        filterSelector.getItems().addAll("All", "Red Vehicles", "Fast Vehicles");
+
+        filterSelector.getItems().addAll(
+                "All",
+                "Red Vehicles",
+                "Blue Vehicles",
+                "Green Vehicles",
+                "Yellow Vehicles",
+                "White Vehicles",
+                "Black Vehicles",
+                "Fast Vehicles (> 40 km/h)",
+                "Slow/Stopped (< 5 km/h)",
+                "North Side (Top Half)",
+                "South Side (Bottom Half)"
+        );
+
         filterSelector.setValue("All");
         filterSelector.setMaxWidth(Double.MAX_VALUE);
 
@@ -92,21 +112,13 @@ public class FxVehiclePanel extends VBox {
             if (controller != null) controller.setActiveFilter(filterSelector.getValue());
         });
 
-        grid.add(filterSelector, 1, 4);
-
+        grid.add(filterSelector, 1, 5);
     }
 
-    /**
-     * sets the controller reference
-     * @param controller the simulation controller
-     */
     public void setController(SimulationController controller) {
         this.controller = controller;
     }
 
-    /**
-     * fetches available vehicle types and routes from sumo
-     */
     private void updateLists() {
         if (controller == null) return;
 
@@ -128,9 +140,6 @@ public class FxVehiclePanel extends VBox {
         if (!types.isEmpty()) typeSelector.getSelectionModel().selectFirst();
     }
 
-    /**
-     * reads inputs and triggers the spawn command in controller
-     */
     private void spawnVehicle() {
         if (controller == null) return;
 
@@ -140,7 +149,26 @@ public class FxVehiclePanel extends VBox {
 
         javafx.scene.paint.Color selectedColor = colorPicker.getValue();
 
-        // validation
+        double speedKmh = speedSpinner.getValue();
+
+        if (speedKmh < 30.0) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Geschwindigkeitswarnung");
+            alert.setHeaderText("Zu langsam!");
+            alert.setContentText("Die Geschwindigkeit muss mindestens 30 km/h betragen.");
+            alert.showAndWait();
+            return;
+        }
+
+        if (speedKmh > 50.0) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Geschwindigkeitswarnung");
+            alert.setHeaderText("Zu schnell!");
+            alert.setContentText("Die Geschwindigkeit darf maximal 50 km/h betragen.");
+            alert.showAndWait();
+            return;
+        }
+
         if (route == null || route.startsWith("No routes")) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Invalid Route");
@@ -151,8 +179,8 @@ public class FxVehiclePanel extends VBox {
         }
 
         if (id != null && !id.isEmpty() && type != null) {
-            controller.spawnVehicle(id, type, route, selectedColor);
-            // auto increment id for convenience
+            double speedMs = speedKmh / 3.6;
+            controller.spawnVehicle(id, type, route, selectedColor, speedMs);
             idField.setText(id + "_x");
         }
     }

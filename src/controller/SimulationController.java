@@ -161,8 +161,7 @@ public class SimulationController {
 
     /**
      * Validates all loaded edges by asking SUMO if a route can be computed.
-     * Removes edges that cause TraCI errors (sometimes there appears an error
-     * with invalid starting edge)
+     * Removes edges that cause TraCI errors
      */
     private void validateNetwork() {
         log.info("Validating " + drivableEdges.size() + " potential edges (this may take a moment)...");
@@ -172,11 +171,8 @@ public class SimulationController {
         while (it.hasNext()) {
             String edge = it.next();
             try {
-                // Try to find a route from the edge to itself.
-                // If the edge is invalid for passenger cars SUMO throws an error
                 conn.do_job_get(Simulation.findRoute(edge, edge, "DEFAULT_VEHTYPE", 0.0, 0));
             } catch (Exception e) {
-                // If finding a route fails this edge is dangerous to spawn on
                 it.remove();
                 removed++;
             }
@@ -292,16 +288,17 @@ public class SimulationController {
      * adds a new vehicle to sumo safely
      * spawns a thread to avoid blocking the GUI
      */
-    public void spawnVehicle(String id, String type, String selection, javafx.scene.paint.Color color) {
+
+    public void spawnVehicle(String id, String type, String selection, javafx.scene.paint.Color color, double speed) {
         if (conn == null) return;
-        new Thread(() -> spawnVehicleInternal(id, type, selection, color)).start();
+        new Thread(() -> spawnVehicleInternal(id, type, selection, color, speed)).start();
     }
 
     /**
      * Internal method containing the spawn logic.
      * Synchronized to ensure thread safety during batch operations.
      */
-    private void spawnVehicleInternal(String id, String type, String selection, javafx.scene.paint.Color color) {
+    private void spawnVehicleInternal(String id, String type, String selection, javafx.scene.paint.Color color, double startSpeed) {
         synchronized (traciLock) {
             try {
                 String fromEdge = null;
@@ -320,24 +317,39 @@ public class SimulationController {
                     return;
                 }
 
+                // safety clamp
+                double safeSpeed = startSpeed;
+                try {
+                    String laneId = fromEdge + "_0"; // Wir raten die erste Spur
+                    double laneMaxSpeed = (double) conn.do_job_get(Lane.getMaxSpeed(laneId));
+                    double typeMaxSpeed = (double) conn.do_job_get(Vehicletype.getMaxSpeed(type));
+
+
+                    double limit = Math.max(laneMaxSpeed, typeMaxSpeed) * 1.5;
+
+                    if (startSpeed > limit) {
+                        safeSpeed = limit;
+                        log.info("Speed " + startSpeed + " m/s too high. Clamped to safe limit: " + safeSpeed + " m/s");
+                    }
+                } catch (Exception e) {
+                    if (startSpeed > 14.0) safeSpeed = 14.0;
+                }
+
                 String routeId = generateRouteFrom(id, fromEdge);
 
                 if (routeId != null) {
-                    // random offset to prevent invisible queue for cars
                     double randomPos = 5.0 + (Math.random() * 35.0);
-                    double startSpeed = 3.0;
 
-                    // 0 is the depart time
-                    conn.do_job_set(Vehicle.add(id, type, routeId, 0, randomPos, startSpeed, (byte) 0));
+
+                    conn.do_job_set(Vehicle.add(id, type, routeId, 0, randomPos, safeSpeed, (byte) 0));
 
                     VehicleWrapper newCar = new VehicleWrapper(id, conn);
                     newCar.setColor(color);
 
                     activeVehicles.put(id, newCar);
 
-                    // reduce logging noise during stress tests
                     if (!id.startsWith("stress_")) {
-                        log.info("Spawned " + id + " on " + fromEdge);
+                        log.info("Spawned " + id + " on " + fromEdge + " with speed " + safeSpeed + " m/s");
                     }
                 } else {
                     log.warning("No path found from " + fromEdge);
@@ -363,7 +375,8 @@ public class SimulationController {
 
             for (int i = 0; i < 50; i++) {
                 String id = "stress_" + batchId + "_" + i;
-                spawnVehicleInternal(id, "DEFAULT_VEHTYPE", selectedEdge, color);
+
+                spawnVehicleInternal(id, "DEFAULT_VEHTYPE", selectedEdge, color, 5.0);
                 try { Thread.sleep(50); } catch (InterruptedException e) {}
             }
             log.info("Stress Test Injection Loop Finished.");
@@ -377,7 +390,7 @@ public class SimulationController {
         if (drivableEdges.size() < 2) return null;
 
         int attempts = 0;
-        int maxAttempts = 20; // Reduced to prevent long freezes
+        int maxAttempts = 5;
 
         while (attempts < maxAttempts) {
             String toEdge = drivableEdges.get(random.nextInt(drivableEdges.size()));
