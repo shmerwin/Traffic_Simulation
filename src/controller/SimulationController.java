@@ -467,28 +467,70 @@ public class SimulationController {
         } catch (Exception e) { return new ArrayList<>(); }
     }
 
-    public double getVehicleDensity(EdgeWrapper edge) {
-        try {
-            int count = edge.getVehicle();
-            if (edge.getLength() > 0) {
-                return (double) count / edge.getLength();
-            }
-        } catch (Exception e) { return 0; }
-        return 0;
+    /**
+     * method to display TravelTimeChart
+     */
+    public int[] getTravelTimeBins() {
+        int[] bins = new int[5]; // <=30, <=60, <=120, <=300, >300
+
+        for (VehicleWrapper car : getActiveVehicles().values()) {
+            long time = car.getTravelTimeSeconds();
+            if (time <= 30) bins[0]++;
+            else if (time <= 60) bins[1]++;
+            else if (time <= 120) bins[2]++;
+            else if (time <= 300) bins[3]++;
+            else bins[4]++;
+        }
+
+        return bins;
     }
 
-    public List<String> getCongestionHotspots() {
-        List<String> hotspots = new ArrayList<>();
-        for (EdgeWrapper edge : mapEdges) {
+
+    /**
+     * method to display EdgeDensity chart
+     */
+    public int[] getEdgeDensityBins() {
+        int[] bins = new int[6];
+
+        //counts vehicles per edge
+        Map<String, Integer> edgeCounts = new HashMap<>();
+        for (VehicleWrapper v : getActiveVehicles().values()) {
             try {
-                double meanSpeed = (double) conn.do_job_get(Lane.getLastStepMeanSpeed(edge.getId()));
-                if (edge.getVehicle() > 0 && meanSpeed < 2.0) {
-                    hotspots.add(edge.getId());
-                }
-            } catch (Exception e) {}
+                String edgeId = v.getRoadId();
+                if (edgeId == null || edgeId.isBlank()) continue;
+                if (edgeId.startsWith(":")) continue;
+                edgeCounts.merge(edgeId, 1, Integer::sum);
+            } catch (Exception ignored) {}
         }
-        return hotspots;
+
+        Set<String> seenEdges = new HashSet<>();
+        for (EdgeWrapper lane : getMapEdges()) {
+            if (lane == null) continue;
+
+            String laneId = lane.getId();
+            if (laneId == null || laneId.isBlank()) continue;
+            if (laneId.startsWith(":")) continue;
+
+            int idx = laneId.lastIndexOf('_');
+            if (idx <= 0) continue;
+
+            String edgeId = laneId.substring(0, idx);
+            if (!seenEdges.add(edgeId)) continue;
+
+            int c = edgeCounts.getOrDefault(edgeId, 0);
+
+            if (c == 0) bins[0]++;
+            else if (c == 1) bins[1]++;
+            else if (c == 2) bins[2]++;
+            else if (c <= 5) bins[3]++;
+            else if (c <= 10) bins[4]++;
+            else bins[5]++;
+        }
+
+        return bins;
     }
+
+
 
     public void setActiveFilter(String filter) {
         this.activeFilter = (filter == null) ? "All" : filter;
