@@ -28,7 +28,7 @@ public class FxMapCanvas extends Canvas {
 
     // colors
     private static final Color COLOR_BACKGROUND = Color.rgb(30, 30, 30);
-    private static final Color COLOR_ROAD = Color.rgb(100, 100, 100);   // Slightly darker for contrast
+    private static final Color COLOR_ROAD = Color.rgb(100, 100, 100);
     private static final Color COLOR_ROAD_OUTLINE = Color.rgb(60, 60, 60);
     private static final Color COLOR_KERB = Color.rgb(120, 120, 120);
 
@@ -42,14 +42,11 @@ public class FxMapCanvas extends Canvas {
     public FxMapCanvas(SimulationController controller) {
         this.controller = controller;
 
-        // Add listeners to trigger a redraw immediately when width or height changes
         widthProperty().addListener(evt -> draw());
         heightProperty().addListener(evt -> draw());
 
-        // Handle scroll events for zooming
         setOnScroll(e -> handleScroll(e));
 
-        // Events for drag & drop (moving the map)
         setOnMousePressed(e -> {
             lastMouseX = e.getX();
             lastMouseY = e.getY();
@@ -66,7 +63,6 @@ public class FxMapCanvas extends Canvas {
         });
 
         setOnMouseClicked(e -> handleMouseClick(e));
-
     }
 
     private void handleMouseClick(MouseEvent e) {
@@ -76,17 +72,14 @@ public class FxMapCanvas extends Canvas {
         double h = getHeight();
         double s = getScale();
 
-        //wir rechnen pixel in meter um
-        double clickSimX = (e.getX() - w / 2) / s + camX;
-        double clickSimY = camY - (e.getY() - h / 2) / s;
-
+        double clickSimX = (e.getX() - w / 2.0) / s + camX;
+        double clickSimY = camY - (e.getY() - h / 2.0) / s;
 
         Map<String, VehicleWrapper> vehicles = controller.getActiveVehicles();
         if (vehicles == null) return;
 
         for (VehicleWrapper car : vehicles.values()) {
             double dist = Math.hypot(car.getX() - clickSimX, car.getY() - clickSimY);
-
             double hitRadius = Math.max(2.0, car.getLength() / 2.0);
 
             if (dist < hitRadius) {
@@ -94,9 +87,7 @@ public class FxMapCanvas extends Canvas {
                 return;
             }
         }
-
     }
-
 
     private void showVehicleInfo(VehicleWrapper car) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -107,40 +98,28 @@ public class FxMapCanvas extends Canvas {
 
         String infoText = "ID: " + car.getId() + "\n" +
                 "Type: " + typeStr + "\n" +
+                "Road: " + car.getRoadId() + "\n" +
                 "Speed: " + String.format("%.2f km/h", car.getSpeed() * 3.6) + "\n" +
                 "Color: " + car.getColor().toString();
 
         alert.setContentText(infoText);
         alert.showAndWait();
-
-
-
     }
-
 
     @Override
     public boolean isResizable() { return true; }
 
+    @Override
+    public double minWidth(double height) { return 100.0; }
 
     @Override
-    public double minWidth(double height) {
-        return 100.0;
-    }
+    public double minHeight(double width) { return 100.0; }
 
     @Override
-    public double minHeight(double width) {
-        return 100.0;
-    }
+    public double prefWidth(double height) { return 800.0; }
 
     @Override
-    public double prefWidth(double height) {
-        return 800.0;
-    }
-
-    @Override
-    public double prefHeight(double width) {
-        return 600.0;
-    }
+    public double prefHeight(double width) { return 600.0; }
 
     private void handleScroll(ScrollEvent e) {
         double factor = 1.1;
@@ -155,9 +134,7 @@ public class FxMapCanvas extends Canvas {
         double w = getWidth();
         double h = getHeight();
 
-        // GraphicsContext acts as the "paintbrush" used to draw on the canvas
         GraphicsContext gc = getGraphicsContext2D();
-
 
         gc.setFill(COLOR_BACKGROUND);
         gc.fillRect(0, 0, w, h);
@@ -190,7 +167,6 @@ public class FxMapCanvas extends Canvas {
         t.appendTranslation(-camX, -camY);
         gc.setTransform(t);
 
-        // Draw Roads
         List<EdgeWrapper> edges = controller.getMapEdges();
         if (edges != null) {
             for (EdgeWrapper edge : edges){
@@ -198,12 +174,11 @@ public class FxMapCanvas extends Canvas {
             }
         }
 
-        // Draw Vehicles with filter
         Map<String, VehicleWrapper> vehicles = controller.getActiveVehicles();
         int shownCars = 0;
 
         if (vehicles != null) {
-            String filter = controller.getActiveFilter(); // "All", "Red Vehicles", "Fast Vehicles"
+            String filter = controller.getActiveFilter();
 
             for (VehicleWrapper car : vehicles.values()) {
                 if (matchesFilter(car, filter)) {
@@ -213,8 +188,6 @@ public class FxMapCanvas extends Canvas {
             }
         }
 
-
-        // Draw Traffic Lights
         Map<String, TrafficLightWrapper> lights = controller.getTrafficLights();
         if (lights != null) {
             for (TrafficLightWrapper tls : lights.values()) {
@@ -226,13 +199,14 @@ public class FxMapCanvas extends Canvas {
 
         gc.restore();
 
-        // HUD
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("SansSerif", FontWeight.BOLD, 12));
         int carCount = shownCars;
         int streetCount = (edges != null) ? edges.size() : 0;
         gc.fillText("Cars: " + carCount + " | Streets: " + streetCount, 20, 30);
         gc.fillText("Zoom: " + String.format("%.2f", zoom), 20, 50);
+
+        gc.fillText("Filter: " + controller.getActiveFilter(), 20, 70);
     }
 
     private void drawEdge(GraphicsContext gc, EdgeWrapper edge, double scale) {
@@ -245,13 +219,11 @@ public class FxMapCanvas extends Canvas {
 
         double streetWidth = edge.getWidth();
 
-        // Optional: Draw road outline for better contrast
         gc.setStroke(COLOR_KERB);
         gc.setLineWidth(streetWidth + 0.8);
-        gc.setLineCap(javafx.scene.shape.StrokeLineCap.ROUND); // Runde Enden sehen besser aus
+        gc.setLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
         gc.stroke();
 
-        // Draw main road
         gc.setStroke(COLOR_ROAD);
         gc.setLineWidth(streetWidth);
         gc.setLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
@@ -260,20 +232,16 @@ public class FxMapCanvas extends Canvas {
 
     private void drawVehicle(GraphicsContext gc, VehicleWrapper car, double scale) {
         gc.save();
-
-        // positioning and rotation
         gc.translate(car.getX(), car.getY());
         gc.rotate(-car.getAngle() + 90);
 
         double w = car.getWidth();
         double l = car.getLength();
 
-        // calculate scaling
         double minPixels = 4.0;
         double currentSizePixels = l * scale;
         double drawScale = 1.0;
 
-        // if the car is smaller than 4 pixels on screen, scale it up visually
         if (currentSizePixels < minPixels) {
             drawScale = minPixels / currentSizePixels;
         }
@@ -281,7 +249,6 @@ public class FxMapCanvas extends Canvas {
         double halfL = (l / 2.0) * drawScale;
         double halfW = (w / 2.0) * drawScale;
 
-        // If heavily zoomed out, draw as a simple box for clarity
         if (drawScale > 2.0) {
             gc.setFill(car.getColor());
             gc.fillRoundRect(-halfL, -halfW, l * drawScale, w * drawScale, w*0.5, w*0.5);
@@ -289,10 +256,6 @@ public class FxMapCanvas extends Canvas {
             return;
         }
 
-        /**
-         * Otherwise draw a detailed car
-         * draw wheels
-         */
         gc.setFill(Color.BLACK);
         double wheelL = l * 0.2 * drawScale;
         double wheelW = w * 0.3 * drawScale;
@@ -304,35 +267,29 @@ public class FxMapCanvas extends Canvas {
         gc.fillRect(-wheelXOffset - wheelL/2, -wheelYOffset - wheelW/2, wheelL, wheelW);
         gc.fillRect(-wheelXOffset - wheelL/2, wheelYOffset - wheelW/2, wheelL, wheelW);
 
-        // Car Body
         gc.setFill(car.getColor());
         gc.fillRoundRect(-halfL, -halfW, l * drawScale, w * drawScale, w*0.4*drawScale, w*0.4*drawScale);
 
-        // Cabin
         gc.setFill(Color.rgb(30, 30, 35));
         double cabinL = l * 0.6 * drawScale;
         double cabinW = w * 0.8 * drawScale;
         double cabinX = -(l * 0.05) * drawScale;
         gc.fillRoundRect(cabinX - cabinL/2, -cabinW/2, cabinL, cabinW, w*0.2, w*0.2);
 
-        // Roof
         gc.setFill(car.getColor());
         double roofL = l * 0.35 * drawScale;
         double roofW = w * 0.7 * drawScale;
         gc.fillRoundRect(cabinX - roofL/2, -roofW/2, roofL, roofW, w*0.1, w*0.1);
 
-        // Headlights
         gc.setFill(Color.LIGHTYELLOW);
         double lightSize = w * 0.2 * drawScale;
         gc.fillOval(halfL - lightSize, -halfW + (w*0.1*drawScale), lightSize, lightSize);
         gc.fillOval(halfL - lightSize, halfW - (w*0.1*drawScale) - lightSize, lightSize, lightSize);
 
-        // Taillights
         gc.setFill(Color.RED);
         gc.fillOval(-halfL, -halfW + (w*0.1*drawScale), lightSize, lightSize);
         gc.fillOval(-halfL, halfW - (w*0.1*drawScale) - lightSize, lightSize, lightSize);
 
-        // Side Mirrors
         gc.setFill(car.getColor());
         double mirrorL = l * 0.05 * drawScale;
         double mirrorW = w * 0.2 * drawScale;
@@ -340,7 +297,6 @@ public class FxMapCanvas extends Canvas {
         gc.fillOval(mirrorX, -halfW - mirrorW/2, mirrorL, mirrorW);
         gc.fillOval(mirrorX, halfW - mirrorW/2, mirrorL, mirrorW);
 
-        // Outline
         gc.setStroke(Color.BLACK);
         gc.setLineWidth(0.5 / scale);
         gc.strokeRoundRect(-halfL, -halfW, l * drawScale, w * drawScale, w*0.4*drawScale, w*0.4*drawScale);
@@ -351,18 +307,55 @@ public class FxMapCanvas extends Canvas {
     private boolean matchesFilter(VehicleWrapper car, String filter) {
         if (filter == null || filter.equals("All")) return true;
 
+        Color c = car.getColor();
+        if (c == null) return false;
+
+        double r = c.getRed();
+        double g = c.getGreen();
+        double b = c.getBlue();
+
+        // --- FARB-FILTER ---
         if (filter.equals("Red Vehicles")) {
-            Color c = car.getColor();
-            return c != null && c.getRed() > 0.6 && c.getGreen() < 0.4 && c.getBlue() < 0.4;
+            return r > 0.5 && r > g && r > b;
+        }
+        if (filter.equals("Blue Vehicles")) {
+            return b > 0.5 && b > r && b > g;
+        }
+        if (filter.equals("Green Vehicles")) {
+            return g > 0.4 && g > r && g > b;
+        }
+        if (filter.equals("Yellow Vehicles")) {
+            return r > 0.5 && g > 0.5 && b < 0.6;
+        }
+        if (filter.equals("White Vehicles")) {
+            return r > 0.7 && g > 0.7 && b > 0.7;
+        }
+        if (filter.equals("Black Vehicles")) {
+            return r < 0.3 && g < 0.3 && b < 0.3;
         }
 
-        if (filter.equals("Fast Vehicles")) {
-            return car.getSpeed() * 3.6 >= 50.0; // km/h threshold
+        if (filter.startsWith("Fast Vehicles")) {
+
+            return car.getSpeed() * 3.6 >= 40.0;
+        }
+
+        if (filter.startsWith("Slow/Stopped")) {
+            return car.getSpeed() * 3.6 < 5.0;
+        }
+
+        if (controller != null) {
+            double midY = controller.getMapMinY() + (controller.getMapHeight() / 2.0);
+
+            if (filter.startsWith("North Side")) {
+                return car.getY() > midY;
+            }
+            if (filter.startsWith("South Side")) {
+                return car.getY() <= midY;
+            }
         }
 
         return true;
     }
-
 
     private void drawSignal(GraphicsContext gc, TrafficLightWrapper.SignalPoint signal, double currentScale) {
         double baseSizeMeters = 2.5;

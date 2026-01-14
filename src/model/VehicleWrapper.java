@@ -23,6 +23,9 @@ public class VehicleWrapper {
     private double length, width;
     private Color color;
     private String type;
+
+    private String currentRoadId = "";
+
     private final long spawnTime;
 
     /**
@@ -48,12 +51,12 @@ public class VehicleWrapper {
             this.color = Color.rgb(r, g, b);
             this.length = (double) conn.do_job_get(Vehicle.getLength(id));
             this.width = (double) conn.do_job_get(Vehicle.getWidth(id));
-            this.type = (String) conn.do_job_get(Vehicle.getWidth(id));
+            this.type = (String) conn.do_job_get(Vehicle.getTypeID(id));
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed to fetch static data for vehicle " + id, e);
             this.color = Color.YELLOW;
             this.length = 5.0; this.width = 2.0;
-            this.type = "Unknown"; // for wrong request
+            this.type = "Unknown";
         }
     }
 
@@ -73,6 +76,10 @@ public class VehicleWrapper {
             this.x = pos.x; this.y = pos.y;
             this.angle = (double) conn.do_job_get(Vehicle.getAngle(id));
             this.speed = (double) conn.do_job_get(Vehicle.getSpeed(id));
+
+
+            this.currentRoadId = (String) conn.do_job_get(Vehicle.getRoadID(id));
+
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed to update data for vehicle " + id, e);
         }
@@ -129,15 +136,13 @@ public class VehicleWrapper {
     public double getLength() { return length; }
     public double getWidth() { return width; }
     public Color getColor() { return color; }
-
-    public String getType() { return type; } //getter for the type
+    public String getType() { return type; }
 
     /**
      * Method for seeing on which road which car is
      * @return the edge of the specific car
-     * @throws Exception if data cannot be retrieved
      */
-    public String getRoadId() throws Exception {
-        return (String) conn.do_job_get(Vehicle.getRoadID(id));
+    public String getRoadId() {
+        return currentRoadId;
     }
 }
