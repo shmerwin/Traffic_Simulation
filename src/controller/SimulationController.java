@@ -14,6 +14,24 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
+
+
+
+
 /**
  * Controller that handles the simulation and connection to sumo
  */
@@ -51,6 +69,8 @@ public class SimulationController {
     private volatile int simDelay = 100;
     private volatile String activeFilter = "All";
 
+    private volatile long currentStep = 0; // for reports
+    private volatile long simulationStartWallTimeMs = 0;
 
     private FxMainFrame view;
 
@@ -81,6 +101,9 @@ public class SimulationController {
                 conn = new SumoTraciConnection(sumo, config);
                 conn.runServer();
                 isRunning = true;
+
+                simulationStartWallTimeMs = System.currentTimeMillis();
+                currentStep = 0;
 
                 // synchronize initial data fetching
                 synchronized (traciLock) {
@@ -191,6 +214,7 @@ public class SimulationController {
                     synchronized (traciLock) {
                         conn.do_timestep();
                         step++;
+                        currentStep = step;
 
                         // get current data from sumo
                         refreshData(step);
@@ -548,6 +572,127 @@ public class SimulationController {
             if (tls != null) tls.setPhaseDuration(seconds);
         }
     }
+
+    /**
+     * Export a CSV report (one file) containing Summary (key,value) and Speed history (index,avg_speed_kmh)
+     */
+    public void exportCsvReport(File file) throws IOException {
+        if (file == null) throw new IllegalArgumentException("file is null");
+
+        final String exportTimeUtc = DateTimeFormatter.ISO_INSTANT.format(Instant.now());
+
+        final long step;
+        final double avgSpeedKmh;
+        final int vehicleCount;
+        final String filter;
+        final List<Double> hist;
+
+        // Take a quick snapshot under lock, then write to disk without holding TraCI lock.
+        synchronized (traciLock) {
+            step = currentStep;
+            avgSpeedKmh = currentAvgSpeed;
+            vehicleCount = activeVehicles.size();
+            filter = activeFilter;
+            hist = new ArrayList<>(speedHistory);
+        }
+
+        try (BufferedWriter w = new BufferedWriter(
+                new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
+
+            // Summary section
+            w.write("key,value\n");
+            w.write("export_time_utc," + csvEscape(exportTimeUtc) + "\n");
+            w.write("sumo_binary," + csvEscape(sumo) + "\n");
+            w.write("config_file," + csvEscape(config) + "\n");
+            w.write("current_step," + step + "\n");
+            w.write("active_filter," + csvEscape(filter) + "\n");
+            w.write("active_vehicle_count," + vehicleCount + "\n");
+            w.write(String.format(Locale.US, "current_avg_speed_kmh,%.3f\n", avgSpeedKmh));
+
+            // Blank line between sections (Excel-friendly)
+            w.write("\n");
+
+            // Speed history section
+            w.write("index,avg_speed_kmh\n");
+            for (int i = 0; i < hist.size(); i++) {
+                w.write(i + "," + String.format(Locale.US, "%.3f", hist.get(i)) + "\n");
+            }
+        }
+    }
+
+    public void exportPdfReport(File file) throws IOException {
+        if (file == null) throw new IllegalArgumentException("file is null");
+
+        final long step;
+        final double avgSpeedKmh;
+        final int vehicleCount;
+        final int tlsCount;
+        final String filter;
+        final long runtimeSeconds;
+
+        // Snapshot under lock so we don't conflict with TraCI thread
+        synchronized (traciLock) {
+            step = currentStep;
+            avgSpeedKmh = currentAvgSpeed;
+            vehicleCount = activeVehicles.size();
+            tlsCount = trafficLights.size();
+            filter = activeFilter;
+
+            long start = simulationStartWallTimeMs;
+            long now = System.currentTimeMillis();
+            runtimeSeconds = (start > 0) ? Math.max(0, (now - start) / 1000) : 0;
+        }
+
+        List<String> lines = new ArrayList<>();
+        lines.add("Config: " + config);
+        lines.add("Step: " + step);
+        lines.add("Runtime (s): " + runtimeSeconds);
+        lines.add("Active filter: " + filter);
+        lines.add("Active vehicles: " + vehicleCount);
+        lines.add("Traffic lights: " + tlsCount);
+        lines.add(String.format(Locale.US, "Current avg speed (km/h): %.2f", avgSpeedKmh));
+
+        // --- PDFBox writing ---
+        try (PDDocument doc = new PDDocument()) {
+            PDPage page = new PDPage();
+            doc.addPage(page);
+
+            try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
+                float x = 50;
+                float y = 780;
+
+                // Title
+                cs.beginText();
+                cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 16);
+                cs.newLineAtOffset(x, y);
+                cs.showText("Traffic Simulation Report");
+                cs.endText();
+
+                y -= 28;
+
+                // Body
+                cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 11);
+                for (String line : lines) {
+                    cs.beginText();
+                    cs.newLineAtOffset(x, y);
+                    cs.showText(line);
+                    cs.endText();
+                    y -= 14;
+                }
+            }
+
+            doc.save(file);
+        }
+    }
+
+
+    private static String csvEscape(String s) {
+        if (s == null) return "";
+        boolean needQuotes = s.contains(",") || s.contains("\"") || s.contains("\n") || s.contains("\r");
+        String out = s.replace("\"", "\"\"");
+        return needQuotes ? ("\"" + out + "\"") : out;
+    }
+
 
     // getters
     public double getMapWidth() { return mapMaxX - mapMinX; }
