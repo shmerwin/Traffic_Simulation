@@ -71,7 +71,7 @@ public class FxStatisticsPanel extends VBox {
 
         // Middle section: charts (grows to fill space)
         VBox chartsSection = new VBox(10);
-        chartsSection.getChildren().addAll(lineChart, travelTimeChart);
+        chartsSection.getChildren().addAll(lineChart, travelTimeChart, edgeDensityChart);
         VBox.setVgrow(chartsSection, Priority.ALWAYS);
 
         // Bottom section: empty space on left, buttons on right
