@@ -74,6 +74,7 @@ public class FxStatisticsPanel extends VBox {
         chartsSection.getChildren().addAll(lineChart, travelTimeChart, edgeDensityChart);
         VBox.setVgrow(chartsSection, Priority.ALWAYS);
 
+
         // Bottom section: empty space on left, buttons on right
         HBox bottomSection = new HBox();
         bottomSection.setSpacing(10);
@@ -249,14 +250,6 @@ public class FxStatisticsPanel extends VBox {
         int[] bins = controller.getTravelTimeBins();
         String[] labels = {"<30s", "1m", "2m", "5m", ">5m"};
 
-        for (VehicleWrapper car : vehicles.values()) {
-            long time = car.getTravelTimeSeconds(); //
-            if (time <= 30) bins[0]++;
-            else if (time <= 60) bins[1]++;
-            else if (time <= 120) bins[2]++;
-            else if (time <= 300) bins[3]++;
-            else bins[4]++;
-        }
 
         distributionSeries.getData().clear();
         for (int i = 0; i < bins.length; i++) {
