@@ -178,10 +178,9 @@ public class FxMapCanvas extends Canvas {
         int shownCars = 0;
 
         if (vehicles != null) {
-            String filter = controller.getActiveFilter();
 
             for (VehicleWrapper car : vehicles.values()) {
-                if (matchesFilter(car, filter)) {
+                if (controller.matchesFilter(car)) {
                     drawVehicle(gc, car, s);
                     shownCars++;
                 }
@@ -304,59 +303,6 @@ public class FxMapCanvas extends Canvas {
         gc.restore();
     }
 
-    private boolean matchesFilter(VehicleWrapper car, String filter) {
-        if (filter == null || filter.equals("All")) return true;
-
-        Color c = car.getColor();
-        if (c == null) return false;
-
-        double r = c.getRed();
-        double g = c.getGreen();
-        double b = c.getBlue();
-
-        // --- FARB-FILTER ---
-        if (filter.equals("Red Vehicles")) {
-            return r > 0.5 && r > g && r > b;
-        }
-        if (filter.equals("Blue Vehicles")) {
-            return b > 0.5 && b > r && b > g;
-        }
-        if (filter.equals("Green Vehicles")) {
-            return g > 0.4 && g > r && g > b;
-        }
-        if (filter.equals("Yellow Vehicles")) {
-            return r > 0.5 && g > 0.5 && b < 0.6;
-        }
-        if (filter.equals("White Vehicles")) {
-            return r > 0.7 && g > 0.7 && b > 0.7;
-        }
-        if (filter.equals("Black Vehicles")) {
-            return r < 0.3 && g < 0.3 && b < 0.3;
-        }
-
-        if (filter.startsWith("Fast Vehicles")) {
-
-            return car.getSpeed() * 3.6 >= 40.0;
-        }
-
-        if (filter.startsWith("Slow/Stopped")) {
-            return car.getSpeed() * 3.6 < 5.0;
-        }
-
-        if (controller != null) {
-            double midY = controller.getMapMinY() + (controller.getMapHeight() / 2.0);
-
-            if (filter.startsWith("North Side")) {
-                return car.getY() > midY;
-            }
-            if (filter.startsWith("South Side")) {
-                return car.getY() <= midY;
-            }
-        }
-
-        return true;
-    }
-
     private void drawSignal(GraphicsContext gc, TrafficLightWrapper.SignalPoint signal, double currentScale) {
         double baseSizeMeters = 2.5;
         double minPixels = 3.0;
@@ -366,4 +312,5 @@ public class FxMapCanvas extends Canvas {
         gc.setFill(signal.color);
         gc.fillOval(signal.x - sizeInMeters/2, signal.y - sizeInMeters/2, sizeInMeters, sizeInMeters);
     }
+
 }
