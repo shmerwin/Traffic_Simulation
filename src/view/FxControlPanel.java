@@ -1,6 +1,7 @@
 package view;
 
 import controller.SimulationController;
+import controller.SimulationException;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -41,7 +42,13 @@ public class FxControlPanel extends HBox {
          * Actions which are executed when the buttons are clicked via lambda expressions
          * Parameter 'e' holds the details of the click event (ActionEvent).
          */
-        playButton.setOnAction(e -> controller.play());
+        playButton.setOnAction(e -> {
+            try {
+                controller.play();
+            } catch (SimulationException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
         pauseButton.setOnAction(e -> controller.pause());
 
         /**

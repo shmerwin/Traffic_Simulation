@@ -1,3 +1,4 @@
+simulation.log
 
 target/
 dependency-reduced-pom.xml
@@ -19,13 +20,10 @@ edgeData.xml
 Thumbs.db
 
 # Java / Maven
-target/
 *.class
-*.log
+
 
 # IntelliJ / Eclipse
-.idea/
-*.iml
 .classpath
 .project
 .settings/

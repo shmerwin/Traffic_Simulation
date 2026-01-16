@@ -103,7 +103,7 @@ public class SimulationController {
      * Establishes the connection to the SUMO server and initializes the simulation
      * Starts the background thread that drives the simulation loop
      */
-    public void startConnection() {
+    public void startConnection() throws SimulationException {
         try {
             if (conn == null) {
                 // Initialize the TraCI connection wrapper
@@ -138,6 +138,7 @@ public class SimulationController {
             }
         } catch (Exception e) {
             log.log(Level.SEVERE, "Fatal error starting SUMO connection: " + e.getMessage(), e);
+            throw new SimulationException("Could not start SUMO. Check path or config file.", e);
         }
     }
 
@@ -222,10 +223,8 @@ public class SimulationController {
     }
     /**
      * The main simulation loop running in a separate background thread.
-     * <p>
      * Advances the SUMO simulation step-by-step, synchronizes data with the internal model,
      * calculates statistics, and triggers the GUI refresh.
-     * </p>
      */
     private void simulationLoop() {
         while (isRunning) {
@@ -691,7 +690,7 @@ public class SimulationController {
     }
 
     // control methods for the gui
-    public void play() {
+    public void play() throws SimulationException {
         if (conn == null) startConnection();
         isPaused = false;
     }
