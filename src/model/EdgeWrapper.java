@@ -6,7 +6,6 @@ import de.tudresden.sumo.objects.SumoGeometry;
 import de.tudresden.sumo.objects.SumoPosition2D;
 import it.polito.appeal.traci.SumoTraciConnection;
 
-import java.awt.geom.Path2D;
 import java.util.ArrayList;
 import java.util.List;
 /**
