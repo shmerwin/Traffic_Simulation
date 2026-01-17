@@ -38,7 +38,7 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) {
         String sumoBin = "sumo";
-        String config = "sumofiles/frankfurt/frankfurt_city.sumocfg";
+        String config = "sumofiles/offenbach/offenbach.sumocfg";
 
         controller = new SimulationController(sumoBin, config);
 
