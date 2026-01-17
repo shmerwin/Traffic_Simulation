@@ -58,6 +58,7 @@ public class SimulationController {
     private final List<Double> speedHistory = new ArrayList<>();
     private double currentAvgSpeed = 0.0;
     private final int maxHistoryPoints = 200;
+    private long lastGuiUpdate = 0;
 
     // Simulation configuration
     private SumoTraciConnection conn;
@@ -252,8 +253,10 @@ public class SimulationController {
                     }
 
                     // Notify GUI (Thread-Safe)
-                    if (view != null) {
+                    long now = System.currentTimeMillis();
+                    if (view != null && (now - lastGuiUpdate > 33)) {
                         Platform.runLater(() -> view.refresh());
+                        lastGuiUpdate = now;
                     }
                 }
 

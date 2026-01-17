@@ -18,6 +18,7 @@ public class EdgeWrapper {
     private List<SumoPosition2D> shapePoints;
     private double width;
     private double length;
+    private double minX, maxX, minY, maxY;
 
     /**
      * Makes an instance of an edge
@@ -55,10 +56,33 @@ public class EdgeWrapper {
                 // if there arent any coords we will make a new list for them
                 this.shapePoints = new ArrayList<>();
             }
+            calculateBounds();
         } catch (Exception e) {
             this.shapePoints = new ArrayList<>();
         }
     }
+    private void calculateBounds() {
+        minX = Double.MAX_VALUE;
+        maxX = -Double.MAX_VALUE;
+        minY = Double.MAX_VALUE;
+        maxY = -Double.MAX_VALUE;
+
+        if (shapePoints.isEmpty()) {
+            minX = maxX = minY = maxY = 0;
+            return;
+        }
+
+        for (SumoPosition2D p : shapePoints) {
+            if (p.x < minX) minX = p.x;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.y > maxY) maxY = p.y;
+        }
+    }
+    public boolean isVisible(double vMinX, double vMaxX, double vMinY, double vMaxY) {
+        return maxX >= vMinX && minX <= vMaxX && maxY >= vMinY && minY <= vMaxY;
+    }
+
 
     public String getId() { return id; }
     public double getLength() { return length; }

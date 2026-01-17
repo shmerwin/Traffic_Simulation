@@ -23,7 +23,7 @@ public class VehicleWrapper {
     private double length, width;
     private Color color;
     private String type;
-
+    private int updateTick = 0;
     private String currentRoadId = "";
 
     private final long spawnTime;
@@ -73,10 +73,15 @@ public class VehicleWrapper {
     public void updateData() {
         try {
             SumoPosition2D pos = (SumoPosition2D) conn.do_job_get(Vehicle.getPosition(id));
-            this.x = pos.x; this.y = pos.y;
+            this.x = pos.x;
+            this.y = pos.y;
             this.angle = (double) conn.do_job_get(Vehicle.getAngle(id));
             this.speed = (double) conn.do_job_get(Vehicle.getSpeed(id));
 
+            if (updateTick % 10 == 0) {
+                this.speed = (double) conn.do_job_get(Vehicle.getSpeed(id));
+                this.currentRoadId = (String) conn.do_job_get(Vehicle.getRoadID(id));
+            }
 
             this.currentRoadId = (String) conn.do_job_get(Vehicle.getRoadID(id));
 

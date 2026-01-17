@@ -136,6 +136,7 @@ public class FxMapCanvas extends Canvas {
 
         GraphicsContext gc = getGraphicsContext2D();
 
+        // clear background
         gc.setFill(COLOR_BACKGROUND);
         gc.fillRect(0, 0, w, h);
 
@@ -167,10 +168,26 @@ public class FxMapCanvas extends Canvas {
         t.appendTranslation(-camX, -camY);
         gc.setTransform(t);
 
+        // calculate visible bounds to avoid drawing everything
+        double margin = 50.0;
+        double viewW = w / s;
+        double viewH = h / s;
+
+        double minX = camX - viewW / 2.0 - margin;
+        double maxX = camX + viewW / 2.0 + margin;
+        double minY = camY - viewH / 2.0 - margin;
+        double maxY = camY + viewH / 2.0 + margin;
+
         List<EdgeWrapper> edges = controller.getMapEdges();
         if (edges != null) {
+            // fast mode when zoomed out
+            boolean simpleDraw = s < 1.5;
+
             for (EdgeWrapper edge : edges){
-                drawEdge(gc, edge, s);
+                // skip edges strictly outside view
+                if (edge.isVisible(minX, maxX, minY, maxY)) {
+                    drawEdge(gc, edge, s, simpleDraw);
+                }
             }
         }
 
@@ -178,11 +195,16 @@ public class FxMapCanvas extends Canvas {
         int shownCars = 0;
 
         if (vehicles != null) {
-
             for (VehicleWrapper car : vehicles.values()) {
-                if (controller.matchesFilter(car)) {
-                    drawVehicle(gc, car, s);
-                    shownCars++;
+                double cx = car.getX();
+                double cy = car.getY();
+
+                // only draw visible cars
+                if (cx >= minX && cx <= maxX && cy >= minY && cy <= maxY) {
+                    if (controller.matchesFilter(car)) {
+                        drawVehicle(gc, car, s);
+                        shownCars++;
+                    }
                 }
             }
         }
@@ -191,24 +213,47 @@ public class FxMapCanvas extends Canvas {
         if (lights != null) {
             for (TrafficLightWrapper tls : lights.values()) {
                 for (TrafficLightWrapper.SignalPoint signal : tls.getSignalPoints()) {
-                    drawSignal(gc, signal, s);
+                    if (signal.x >= minX && signal.x <= maxX && signal.y >= minY && signal.y <= maxY) {
+                        drawSignal(gc, signal, s);
+                    }
                 }
             }
         }
 
         gc.restore();
 
+        // hud
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("SansSerif", FontWeight.BOLD, 12));
         int carCount = shownCars;
         int streetCount = (edges != null) ? edges.size() : 0;
         gc.fillText("Cars: " + carCount + " | Streets: " + streetCount, 20, 30);
         gc.fillText("Zoom: " + String.format("%.2f", zoom), 20, 50);
-
         gc.fillText("Filter: " + controller.getActiveFilter(), 20, 70);
     }
 
-    private void drawEdge(GraphicsContext gc, EdgeWrapper edge, double scale) {
+    // quick check if edge is onscreen
+    private boolean isVisible(EdgeWrapper edge, double minX, double maxX, double minY, double maxY) {
+        List<SumoPosition2D> points = edge.getShapePoints();
+        if (points.isEmpty()) return false;
+
+        // check points against viewport
+        // mostly sufficient for city maps
+        for (SumoPosition2D p : points) {
+            if (p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY) {
+                return true;
+            }
+        }
+
+        // fallback: bounding box check
+        double eMinX = Double.MAX_VALUE, eMaxX = -Double.MAX_VALUE;
+        double eMinY = Double.MAX_VALUE, eMaxY = -Double.MAX_VALUE;
+
+
+        return (eMinX <= maxX && eMaxX >= minX && eMinY <= maxY && eMaxY >= minY);
+    }
+
+    private void drawEdge(GraphicsContext gc, EdgeWrapper edge, double scale, boolean simpleDraw) {
         List<SumoPosition2D> points = edge.getShapePoints();
         if (points.isEmpty()) return;
 
@@ -218,10 +263,13 @@ public class FxMapCanvas extends Canvas {
 
         double streetWidth = edge.getWidth();
 
-        gc.setStroke(COLOR_KERB);
-        gc.setLineWidth(streetWidth + 0.8);
-        gc.setLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
-        gc.stroke();
+        // draw kerb unless zoomed out
+        if (!simpleDraw) {
+            gc.setStroke(COLOR_KERB);
+            gc.setLineWidth(streetWidth + 0.8);
+            gc.setLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
+            gc.stroke();
+        }
 
         gc.setStroke(COLOR_ROAD);
         gc.setLineWidth(streetWidth);
