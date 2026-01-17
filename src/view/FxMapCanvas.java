@@ -56,6 +56,7 @@ public class FxMapCanvas extends Canvas {
             lastMouseX = e.getX();
             lastMouseY = e.getY();
         });
+        setOnMouseClicked(e -> handleMouseClick(e));
 
         setOnMouseDragged(e -> {
             double dx = e.getX() - lastMouseX;
@@ -65,10 +66,8 @@ public class FxMapCanvas extends Canvas {
             lastMouseX = e.getX();
             lastMouseY = e.getY();
             draw();
-        });
 
-        setOnMouseClicked(e -> handleMouseClick(e));
-    }
+        });}
 
     private void loadResourceBackgroundImage(String path) {
 
@@ -81,24 +80,31 @@ public class FxMapCanvas extends Canvas {
 
     private void handleMouseClick(MouseEvent e) {
         if (controller == null) return;
-
         double w = getWidth();
         double h = getHeight();
         double s = getScale();
-
         double clickSimX = (e.getX() - w / 2.0) / s + camX;
         double clickSimY = camY - (e.getY() - h / 2.0) / s;
 
         Map<String, VehicleWrapper> vehicles = controller.getActiveVehicles();
-        if (vehicles == null) return;
-
-        for (VehicleWrapper car : vehicles.values()) {
-            double dist = Math.hypot(car.getX() - clickSimX, car.getY() - clickSimY);
-            double hitRadius = Math.max(2.0, car.getLength() / 2.0);
-
-            if (dist < hitRadius) {
-                showVehicleInfo(car);
-                return;
+        if (vehicles != null) {
+            for (VehicleWrapper car : vehicles.values()) {
+                double dist = Math.hypot(car.getX() - clickSimX, car.getY() - clickSimY);
+                if (dist < Math.max(2.0, car.getLength() / 2.0)) {
+                    showVehicleInfo(car);
+                    return;
+                }
+            }
+        }
+        Map<String, TrafficLightWrapper> lights = controller.getTrafficLights();
+        if (lights != null) {
+            for (TrafficLightWrapper tls : lights.values()) {
+                for (TrafficLightWrapper.SignalPoint pt : tls.getSignalPoints()) {
+                    if (Math.hypot(pt.x - clickSimX, pt.y - clickSimY) < 4.0) {
+                        showTrafficLightInfo(tls);
+                        return;
+                    }
+                }
             }
         }
     }
@@ -117,6 +123,14 @@ public class FxMapCanvas extends Canvas {
                 "Color: " + car.getColor().toString();
 
         alert.setContentText(infoText);
+        alert.showAndWait();
+    }
+
+    private void showTrafficLightInfo(TrafficLightWrapper tls) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Traffic Light Info");
+        alert.setHeaderText("Traffic Light: " + tls.getId());
+        alert.setContentText("Phase: " + tls.getCurrentPhase() + "\nWaiting Cars: " + tls.getWaitingVehicleCount());
         alert.showAndWait();
     }
 
@@ -147,15 +161,11 @@ public class FxMapCanvas extends Canvas {
     public void draw() {
         double w = getWidth();
         double h = getHeight();
-
         GraphicsContext gc = getGraphicsContext2D();
 
-        // set the background.
         if (backgroundImage != null) {
-
             gc.setFill(COLOR_BACKGROUND);
         } else {
-            // if file does not exist, set background to a light green color.
             gc.setFill(COLOR_BACKGROUND_BACKUP);
         }
         gc.fillRect(0, 0, w, h);
@@ -166,7 +176,6 @@ public class FxMapCanvas extends Canvas {
 
         if (mapWidth == 0 || mapHeight == 0) {
             gc.setStroke(Color.WHITE);
-            if (backgroundImage == null) gc.setStroke(Color.BLACK); // if the background is light green
             gc.strokeText("Press Play to load Map", 20, 20);
             return;
         }
@@ -180,14 +189,22 @@ public class FxMapCanvas extends Canvas {
             firstLoad = false;
         }
 
+        double s = getScale();
+
+        double margin = 50.0;
+        double minVisibleX = camX - (w / s) / 2.0 - margin;
+        double maxVisibleX = camX + (w / s) / 2.0 + margin;
+        double minVisibleY = camY - (h / s) / 2.0 - margin;
+        double maxVisibleY = camY + (h / s) / 2.0 + margin;
+
         gc.save();
 
         Affine t = new Affine();
         t.appendTranslation(w / 2.0, h / 2.0);
-        double s = getScale();
         t.appendScale(s, -s);
         t.appendTranslation(-camX, -camY);
         gc.setTransform(t);
+
 
         if (backgroundImage != null) {
             gc.save();
@@ -199,10 +216,14 @@ public class FxMapCanvas extends Canvas {
             gc.restore();
         }
 
+        boolean simpleDraw = s < 1.5;
+
         List<EdgeWrapper> edges = controller.getMapEdges();
         if (edges != null) {
             for (EdgeWrapper edge : edges){
-                drawEdge(gc, edge, s);
+                if (isVisible(edge, minVisibleX, maxVisibleX, minVisibleY, maxVisibleY)) {
+                    drawEdge(gc, edge, s, simpleDraw);
+                }
             }
         }
 
@@ -210,11 +231,14 @@ public class FxMapCanvas extends Canvas {
         int shownCars = 0;
 
         if (vehicles != null) {
-
             for (VehicleWrapper car : vehicles.values()) {
-                if (controller.matchesFilter(car)) {
-                    drawVehicle(gc, car, s);
-                    shownCars++;
+                if (car.getX() >= minVisibleX && car.getX() <= maxVisibleX &&
+                        car.getY() >= minVisibleY && car.getY() <= maxVisibleY) {
+
+                    if (controller.matchesFilter(car)) {
+                        drawVehicle(gc, car, s);
+                        shownCars++;
+                    }
                 }
             }
         }
@@ -223,28 +247,28 @@ public class FxMapCanvas extends Canvas {
         if (lights != null) {
             for (TrafficLightWrapper tls : lights.values()) {
                 for (TrafficLightWrapper.SignalPoint signal : tls.getSignalPoints()) {
-                    drawSignal(gc, signal, s);
+                    if (signal.x >= minVisibleX && signal.x <= maxVisibleX &&
+                            signal.y >= minVisibleY && signal.y <= maxVisibleY) {
+                        drawSignal(gc, signal);
+                    }
                 }
             }
         }
 
         gc.restore();
 
-        if (backgroundImage == null) {
-            gc.setFill(Color.BLACK);    // if background is light green
-        } else {
-            gc.setFill(Color.WHITE);
-        }
+        if (backgroundImage == null) gc.setFill(Color.BLACK);
+        else gc.setFill(Color.WHITE);
+
         gc.setFont(Font.font("SansSerif", FontWeight.BOLD, 12));
         int carCount = shownCars;
         int streetCount = (edges != null) ? edges.size() : 0;
         gc.fillText("Cars: " + carCount + " | Streets: " + streetCount, 20, 30);
         gc.fillText("Zoom: " + String.format("%.2f", zoom), 20, 50);
-
         gc.fillText("Filter: " + controller.getActiveFilter(), 20, 70);
     }
 
-    private void drawEdge(GraphicsContext gc, EdgeWrapper edge, double scale) {
+    private void drawEdge(GraphicsContext gc, EdgeWrapper edge, double scale, boolean simpleDraw) {
         List<SumoPosition2D> points = edge.getShapePoints();
         if (points.isEmpty()) return;
 
@@ -254,10 +278,12 @@ public class FxMapCanvas extends Canvas {
 
         double streetWidth = edge.getWidth();
 
-        gc.setStroke(COLOR_KERB);
-        gc.setLineWidth(streetWidth + 0.8);
-        gc.setLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
-        gc.stroke();
+        if (!simpleDraw) {
+            gc.setStroke(COLOR_KERB);
+            gc.setLineWidth(streetWidth + 0.8);
+            gc.setLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
+            gc.stroke();
+        }
 
         gc.setStroke(COLOR_ROAD);
         gc.setLineWidth(streetWidth);
@@ -339,7 +365,7 @@ public class FxMapCanvas extends Canvas {
         gc.restore();
     }
 
-    private void drawSignal(GraphicsContext gc, TrafficLightWrapper.SignalPoint signal, double scale) {
+    private void drawSignal(GraphicsContext gc, TrafficLightWrapper.SignalPoint signal) {
         double baseW = 1.5;
         double baseH = 4.0;
 
@@ -361,5 +387,22 @@ public class FxMapCanvas extends Canvas {
 
         gc.restore();
     }
+    private boolean isVisible(EdgeWrapper edge, double minX, double maxX, double minY, double maxY) {
+        List<SumoPosition2D> points = edge.getShapePoints();
+        if (points.isEmpty()) return false;
+
+        double eMinX = Double.MAX_VALUE, eMaxX = -Double.MAX_VALUE;
+        double eMinY = Double.MAX_VALUE, eMaxY = -Double.MAX_VALUE;
+
+        for (SumoPosition2D p : points) {
+            if (p.x < eMinX) eMinX = p.x;
+            if (p.x > eMaxX) eMaxX = p.x;
+            if (p.y < eMinY) eMinY = p.y;
+            if (p.y > eMaxY) eMaxY = p.y;
+        }
+
+        return (eMinX <= maxX && eMaxX >= minX && eMinY <= maxY && eMaxY >= minY);
+    }
 
 }
+

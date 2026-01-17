@@ -67,7 +67,7 @@ public class SimulationController {
 
     // simulation state (volatile for visibility across threads)
     private volatile boolean isRunning = false;
-    private volatile boolean isPaused = true;
+    public volatile boolean isPaused = true;
     private volatile boolean isAutoMode = false;
     private volatile int simDelay = 100; // delay in ms between steps
     private volatile String activeFilter = "All";
@@ -329,25 +329,39 @@ public class SimulationController {
         }
     }
 
-    /**
-     * Adaptive Traffic Light Control Logic.
-     * Checks if vehicles are waiting at a red light. If waiting time or queue length
-     * exceeds threshold, switches the phase. Includes a cooldown timer (5s) to prevent flickering.
-     */
     private void handleTrafficLightsAuto() {
         long currentTime = System.currentTimeMillis();
 
         for (TrafficLightWrapper tls : trafficLights.values()) {
-            // Minimum Green/Red Time (5 Seconds)
-            // Prevents the logic from switching too fast
-            if (currentTime - tls.getLastSwitchTime() < 5000) {
+            long timeInPhase = currentTime - tls.getLastSwitchTime();
+
+            if (timeInPhase < 5000) continue;
+
+            if (timeInPhase > 60000) {
+                tls.nextPhase();
                 continue;
             }
 
-            // Queue Length
-            // If more than 2 cars are waiting, trigger next phase
-            int waiting = tls.getWaitingVehicleCount();
-            if (waiting > 2) {
+
+            int[] stats = tls.getPhaseAnalysis();
+            int waitingOnRed = stats[0];
+            int flowingOnGreen = stats[1];
+
+            boolean shouldSwitch = false;
+
+            if (flowingOnGreen > 0) {
+
+                if (timeInPhase > 30000 && waitingOnRed > 0) {
+                    shouldSwitch = true;
+                }
+            } else {
+
+                if (waitingOnRed > 0) {
+                    shouldSwitch = true;
+                }
+            }
+
+            if (shouldSwitch) {
                 tls.nextPhase();
             }
         }
@@ -798,7 +812,9 @@ public class SimulationController {
     public double getMapMinX() { return mapMinX; }
     public double getMapMaxY() { return mapMaxY; }
     public double getMapMinY() { return mapMinY; }
-
+    public boolean isPaused() {
+        return isPaused;
+    }
     public double getCurrentAvgSpeed() { return currentAvgSpeed; }
     public List<Double> getSpeedHistory() { return new ArrayList<>(speedHistory); }
 

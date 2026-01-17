@@ -220,6 +220,47 @@ public class TrafficLightWrapper {
         return count;
     }
 
+    /**
+     * Analyzes traffic to distinguish between stuck cars on red vs. moving cars on green.
+     * If a green lane is mostly jammed, we treat it as empty
+     * to force a switch and stop feeding the jam.
+     * @return int array: [0] = waiting on RED, [1] = flow on GREEN
+     */
+    public int[] getPhaseAnalysis() {
+        int waitingOnRed = 0;
+        int movingOnGreen = 0;
+
+        try {
+            int limit = Math.min(controlledLanes.size(), currentState.length());
+
+            for (int i = 0; i < limit; i++) {
+                String laneId = controlledLanes.get(i);
+                char state = currentState.charAt(i);
+
+                boolean isRed = (state == 'r' || state == 'R');
+                boolean isGreen = (state == 'g' || state == 'G');
+
+                if (isRed) {
+
+                    waitingOnRed += (int) conn.do_job_get(Lane.getLastStepHaltingNumber(laneId));
+                } else if (isGreen) {
+                    int total = (int) conn.do_job_get(Lane.getLastStepVehicleNumber(laneId));
+                    int halting = (int) conn.do_job_get(Lane.getLastStepHaltingNumber(laneId));
+
+                    if (total > 0 && halting > (total * 0.5)) {
+
+                    } else {
+
+                        movingOnGreen += Math.max(0, total - halting);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            return new int[]{0, 0};
+        }
+        return new int[]{waitingOnRed, movingOnGreen};
+    }
+
 
     public String getId() { return id; }
     public String getCurrentState() { return currentState; }
