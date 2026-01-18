@@ -1,7 +1,5 @@
-Real-Time Traffic Simulation with Java
-
-This project is a Java-based application that controls the Eclipse SUMO traffic simulator in real-time using the TraaS (TraCI as a Service) API. It was developed as part of a university project at Frankfurt University of Applied Sciences.
-
+This project is a Java-based application designed to control and monitor the Eclipse SUMO (Simulation of Urban MObility) engine in real-time. Developed as part of a university project at the Frankfurt University of Applied Sciences, it provides a high-level interface for traffic analysis, adaptive signal control, and dynamic vehicle interaction.
+-----------------------
 Team Members
 
     Sherwin Nourinfar
@@ -13,50 +11,67 @@ Team Members
     Ha Cuong Tran
 
     Huu Van Duc
------- 
+----------------------
+Core Features
+
+Real-Time TraCI Integration: Bi-directional communication with SUMO using the TraCI API, allowing for live data extraction and command injection.
+
+Adaptive Traffic Light Control: An intelligent control loop that monitors lane occupancy and waiting times to dynamically adjust signal phases, reducing congestion.
+
+High-Performance Map Rendering: A custom JavaFX-based canvas capable of rendering large-scale networks (e.g., Frankfurt am Main) with smooth zooming and panning.
+
+Dynamic Vehicle Spawning: Interface to inject vehicles with specific types, colors, and speeds. Includes a "Stress Test" mode to evaluate network capacity.
+
+Performance Optimization: Implementation of a batch-processing system for TraCI queries to ensure UI responsiveness even in complex urban scenarios.
+
+Data Export: Functionality to generate simulation reports in CSV and PDF formats, including speed history and travel time distributions.
+------------------------
+
+Technical Challenges Solved
+Thread Synchronization
+
+To prevent race conditions between the JavaFX UI thread and the simulation backend, a robust locking mechanism (traciLock) was implemented. This ensures that only one thread communicates with the SUMO server at a time, preventing socket corruption.
+Network Scaling (Frankfurt Case Study)
+
+Simulating large-scale networks like Frankfurt presented significant performance hurdles. We optimized the network topology (joining junctions within 45m) and throttled traffic light logic updates to prevent "Thread Starvation," ensuring the simulation remains interactive under heavy load.
+Dynamic Routing
+
+Vehicles are equipped with rerouting devices, allowing them to autonomously find alternative paths when encountering congestion caused by traffic signal adjustments or high-density traffic injections.
+---------------------------------------
 Prerequisites
 
-To run this application, you need:
+Java JDK 17 or higher.
 
-    Java JDK 17 or higher.
+Eclipse SUMO (Version 1.21.0 or higher recommended).
 
-    Eclipse SUMO (Version 1.24 recommended).
+    Environment Variables: The SUMO bin directory must be added to your system's PATH variable so that sumo and sumo-gui can be called from the terminal.
 
-        Ensure the SUMO bin folder is added to your system environment variables so the command "sumo" works in the terminal.
-        If not: go into environment variables and add the path
-------
-Installation
+Maven for dependency management.
+----------------------------------
 
-    Clone this repository to your computer.
+Installation & Usage
 
-    Open the project in your IDE.
+Clone the Repository:
 
-    Add the TraaS.jar to your project dependencies.
-    If cloned, it should already be in your dependencies
-------
-How to Run
 
-    Navigate to the file src/controller.Main.java.
+Open in IDE: Import the project as a Maven project to automatically resolve dependencies (PDFBox, TraCI4J).
 
-    Run the main method.
+Run the Application: Execute src/controller/MainLauncher.java.
 
-    The application will automatically:
+Simulation Steps:
 
-        Start a SUMO server instance.
+Press Play to initialize the TraCI connection.
 
-        Open our GUI and be ready to use upon pressing play
-------
+Use the panels on the right for controls
+
+--------------------------------
+
 Project Structure
 
-    src/: Contains the Java source code.
+src/controller/: Manages the main simulation loop, TraCI connection lifecycle, and event handling.
 
-        controller/: The entry point of the application and the one handling data between model and view.
+src/model/: Contains data wrappers for Vehicle, TrafficLight, and Edge objects, handling state synchronization.
 
-        model/: Contains classes for Vehicles, Traffic Lights, and Edges.
+src/view/: JavaFX UI components, including the custom map canvas and dashboard.
 
-        view/: Contains classes for the GUI.
-
-    sumofiles/: Contains the SUMO network and route files.
-
-    lib/: Contains external libraries (TraaS.jar).
-
+sumofiles/: Contains optimized .net.xml files, route definitions, and configuration files.
