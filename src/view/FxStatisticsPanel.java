@@ -7,24 +7,9 @@ import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import model.VehicleWrapper;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-import model.EdgeWrapper;
-
-
-
-import javafx.application.Platform;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.stage.FileChooser;
-import javafx.stage.Window;
-import java.io.File;
-import java.io.IOException;
 
 
 /**
@@ -35,9 +20,6 @@ public class FxStatisticsPanel extends VBox {
     private SimulationController controller;
     private Label avgSpeedLabel;
     private Label totalVehiclesLabel;
-
-    private Button exportCsvButton;
-    private Button exportPdfButton;
 
 
     //speedchart
@@ -63,7 +45,6 @@ public class FxStatisticsPanel extends VBox {
         setupSpeedChart();
         setupHistogram();
 
-        HBox exportBar = setupExportBar();
 
         // Top section: labels
         HBox topSection = new HBox(20);
@@ -83,7 +64,7 @@ public class FxStatisticsPanel extends VBox {
         VBox spacer = new VBox();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        bottomSection.getChildren().addAll(spacer, exportBar);
+        bottomSection.getChildren().addAll(spacer);
 
         // Assemble everything
         getChildren().addAll(topSection, chartsSection, bottomSection);
@@ -137,96 +118,6 @@ public class FxStatisticsPanel extends VBox {
 
     }
 
-    private HBox setupExportBar() {
-        exportCsvButton = new Button("Export CSV...");
-        exportPdfButton = new Button("Export PDF...");
-
-        exportCsvButton.setOnAction(e -> exportCsv());
-        exportPdfButton.setOnAction(e -> exportPdf());
-
-        HBox bar = new HBox(10, exportCsvButton, exportPdfButton);
-        return bar;
-    }
-
-    private void exportCsv() {
-        if (controller == null) {
-            showAlert(Alert.AlertType.WARNING, "Export not available", "Controller not connected.");
-            return;
-        }
-
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Export CSV Report");
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV files (*.csv)", "*.csv"));
-        chooser.setInitialFileName("simulation_report.csv");
-
-        File file = chooser.showSaveDialog(getWindowSafe());
-        if (file == null) return;
-
-        exportCsvButton.setDisable(true);
-
-        new Thread(() -> {
-            try {
-                controller.exportCsvReport(file);
-                Platform.runLater(() -> showAlert(Alert.AlertType.INFORMATION,
-                        "Export successful",
-                        "CSV report saved to:\n" + file.getAbsolutePath()));
-            } catch (IOException ex) {
-                Platform.runLater(() -> showAlert(Alert.AlertType.ERROR,
-                        "Export failed",
-                        "Could not write report:\n" + ex.getMessage()));
-            } finally {
-                Platform.runLater(() -> exportCsvButton.setDisable(false));
-            }
-        }, "csv-export").start();
-    }
-
-    private void exportPdf() {
-        if (controller == null) {
-            showAlert(Alert.AlertType.WARNING, "Export not available", "Controller not connected.");
-            return;
-        }
-
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Export PDF Report");
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF files (*.pdf)", "*.pdf"));
-        chooser.setInitialFileName("simulation_report.pdf");
-
-        File file = chooser.showSaveDialog(getWindowSafe());
-        if (file == null) return;
-
-        exportPdfButton.setDisable(true);
-
-        new Thread(() -> {
-            try {
-                controller.exportPdfReport(file);
-                Platform.runLater(() -> showAlert(Alert.AlertType.INFORMATION,
-                        "Export successful",
-                        "PDF report saved to:\n" + file.getAbsolutePath()));
-            } catch (Exception ex) {
-                Platform.runLater(() -> showAlert(Alert.AlertType.ERROR,
-                        "Export failed",
-                        "Could not write report:\n" + ex.getMessage()));
-            } finally {
-                Platform.runLater(() -> exportPdfButton.setDisable(false));
-            }
-        }, "pdf-export").start();
-    }
-
-
-
-    private Window getWindowSafe() {
-        return (getScene() != null) ? getScene().getWindow() : null;
-    }
-
-    private void showAlert(Alert.AlertType type, String title, String message) {
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        Window owner = getWindowSafe();
-        if (owner != null) alert.initOwner(owner);
-        alert.show();
-    }
 
 
     public void update() {
