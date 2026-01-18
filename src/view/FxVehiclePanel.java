@@ -153,9 +153,9 @@ public class FxVehiclePanel extends VBox {
 
         if (speedKmh < 30.0) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Geschwindigkeitswarnung");
-            alert.setHeaderText("Zu langsam!");
-            alert.setContentText("Die Geschwindigkeit muss mindestens 30 km/h betragen.");
+            alert.setTitle("Velocitywarning");
+            alert.setHeaderText("Too slow!");
+            alert.setContentText("The speed needs to be above 30km/h");
             alert.showAndWait();
             return;
         }

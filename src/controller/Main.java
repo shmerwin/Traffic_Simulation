@@ -38,13 +38,12 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) {
         String sumoBin = "sumo";
-        String config = "sumofiles/offenbach/offenbach.sumocfg";
+        String config = "sumofiles/frankfurt/frankfurt_city.sumocfg";
 
         controller = new SimulationController(sumoBin, config);
 
         // Initialize the main view, passing the stage for the window and the controller for logic
         new FxMainFrame(primaryStage, controller);
-
     }
 
     // This method is called when the application is shutting down (closing the window)

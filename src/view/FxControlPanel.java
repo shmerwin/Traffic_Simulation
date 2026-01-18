@@ -37,8 +37,8 @@ public class FxControlPanel extends HBox {
 
         playButton = new Button("Play");
         pauseButton = new Button("Pause");
-        exportCsvButton = new Button("Export CSV...");
-        exportPdfButton = new Button("Export PDF...");
+        exportCsvButton = new Button("Export CSV");
+        exportPdfButton = new Button("Export PDF");
 
         // slider from 1 to 10 for speed multiplier
         speedSlider = new Slider(1, 10, 1);

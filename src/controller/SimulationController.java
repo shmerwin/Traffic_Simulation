@@ -68,9 +68,10 @@ public class SimulationController {
     // simulation state (volatile for visibility across threads)
     private volatile boolean isRunning = false;
     public volatile boolean isPaused = true;
-    private volatile boolean isAutoMode = false;
+    private volatile boolean isAutoMode = true;
     private volatile int simDelay = 100; // delay in ms between steps
     private volatile String activeFilter = "All";
+
 
     // reporting metrics
     private volatile long currentStep = 0; // for reports
@@ -461,6 +462,11 @@ public class SimulationController {
                 spawnVehicleInternal(id, "DEFAULT_VEHTYPE", selectedEdge, color, 5.0);
                 try { Thread.sleep(50); } catch (InterruptedException e) {}
             }
+
+            Platform.runLater(() -> {
+                if (view != null) { view.refresh();}
+            });
+
             log.info("Stress Test Injection Loop Finished.");
         }).start();
     }
@@ -523,23 +529,25 @@ public class SimulationController {
         double b = c.getBlue();
 
 
-        if (activeFilter.equals("Red Vehicles")) {
-            return r > 0.5 && r > g && r > b;
-        }
-        if (activeFilter.equals("Blue Vehicles")) {
-            return b > 0.5 && b > r && b > g;
-        }
-        if (activeFilter.equals("Green Vehicles")) {
-            return g > 0.4 && g > r && g > b;
-        }
-        if (activeFilter.equals("Yellow Vehicles")) {
-            return r > 0.5 && g > 0.5 && b < 0.6;
-        }
-        if (activeFilter.equals("White Vehicles")) {
-            return r > 0.7 && g > 0.7 && b > 0.7;
-        }
-        if (activeFilter.equals("Black Vehicles")) {
-            return r < 0.3 && g < 0.3 && b < 0.3;
+        switch (activeFilter) {
+            case "Red Vehicles" -> {
+                return r > 0.5 && r > g && r > b;
+            }
+            case "Blue Vehicles" -> {
+                return b > 0.5 && b > r && b > g;
+            }
+            case "Green Vehicles" -> {
+                return g > 0.4 && g > r && g > b;
+            }
+            case "Yellow Vehicles" -> {
+                return r > 0.5 && g > 0.5 && b < 0.6;
+            }
+            case "White Vehicles" -> {
+                return r > 0.7 && g > 0.7 && b > 0.7;
+            }
+            case "Black Vehicles" -> {
+                return r < 0.3 && g < 0.3 && b < 0.3;
+            }
         }
 
         // Speed Filter
@@ -787,7 +795,6 @@ public class SimulationController {
         return bins;
     }
 
-
     public void setActiveFilter(String filter) {
         this.activeFilter = (filter == null) ? "All" : filter;
         if (view != null) Platform.runLater(view::refresh);
@@ -817,7 +824,6 @@ public class SimulationController {
     }
     public double getCurrentAvgSpeed() { return currentAvgSpeed; }
     public List<Double> getSpeedHistory() { return new ArrayList<>(speedHistory); }
-
     public List<EdgeWrapper> getMapEdges() { return mapEdges; }
     public Map<String, VehicleWrapper> getActiveVehicles() { return activeVehicles; }
     public Map<String, TrafficLightWrapper> getTrafficLights() { return trafficLights; }

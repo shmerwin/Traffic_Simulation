@@ -1,0 +1,39 @@
+\doxysection{view.\+Fx\+Control\+Panel Class Reference}
+\hypertarget{classview_1_1_fx_control_panel}{}\label{classview_1_1_fx_control_panel}\index{view.FxControlPanel@{view.FxControlPanel}}
+Inheritance diagram for view.\+Fx\+Control\+Panel:\+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classview_1_1_fx_control_panel}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{classview_1_1_fx_control_panel_a5446b5b1ab34114945de4d91575b9c04}{Fx\+Control\+Panel}} (\doxymbox{\hyperlink{classcontroller_1_1_simulation_controller}{Simulation\+Controller}} controller)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Represents the control bar containing the buttons to control the simulation (play, pause, speed) Extends HBox which arranges the control elements in a horizontal row. 
+
+\label{doc-constructors}
+\Hypertarget{classview_1_1_fx_control_panel_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{classview_1_1_fx_control_panel_a5446b5b1ab34114945de4d91575b9c04}\index{view.FxControlPanel@{view.FxControlPanel}!FxControlPanel@{FxControlPanel}}
+\index{FxControlPanel@{FxControlPanel}!view.FxControlPanel@{view.FxControlPanel}}
+\doxysubsubsection{\texorpdfstring{FxControlPanel()}{FxControlPanel()}}
+{\footnotesize\ttfamily \label{classview_1_1_fx_control_panel_a5446b5b1ab34114945de4d91575b9c04} 
+view.\+Fx\+Control\+Panel.\+Fx\+Control\+Panel (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{classcontroller_1_1_simulation_controller}{Simulation\+Controller}}}]{controller}{}\end{DoxyParamCaption})}
+
+Uses the simulation controller to start an instance of the controlpanel 
+\begin{DoxyParams}{Parameters}
+{\em controller} & \\
+\hline
+\end{DoxyParams}
+Actions which are executed when the buttons are clicked via lambda expressions Parameter \textquotesingle{}e\textquotesingle{} holds the details of the click event (Action\+Event).
+
+Listener to observe changes to the slider\textquotesingle{}s value Using the new value to update the simulation speed immediately. Removed \textquotesingle{}is\+Value\+Changing\textquotesingle{} check to ensure updates are always sent.
+
+The documentation for this class was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+src/\+view/\+Fx\+Control\+Panel.\+java\end{DoxyCompactItemize}

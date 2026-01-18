@@ -61,6 +61,10 @@ public class EdgeWrapper {
             this.shapePoints = new ArrayList<>();
         }
     }
+
+    /**
+     * calculates map bounds with shapepoints
+     */
     private void calculateBounds() {
         minX = Double.MAX_VALUE;
         maxX = -Double.MAX_VALUE;
@@ -79,10 +83,6 @@ public class EdgeWrapper {
             if (p.y > maxY) maxY = p.y;
         }
     }
-    public boolean isVisible(double vMinX, double vMaxX, double vMinY, double vMaxY) {
-        return maxX >= vMinX && minX <= vMaxX && maxY >= vMinY && minY <= vMaxY;
-    }
-
 
     public String getId() { return id; }
     public double getLength() { return length; }

@@ -118,8 +118,6 @@ public class FxStatisticsPanel extends VBox {
 
     }
 
-
-
     public void update() {
         if (controller == null) return;
 
@@ -155,8 +153,6 @@ public class FxStatisticsPanel extends VBox {
         for (int i = 0; i < EdgeBins.length; i++) {
             edgeDensitySeries.getData().add(new XYChart.Data<>(EdgeLabels[i], EdgeBins[i]));
         }
-
-
 
     }
 }

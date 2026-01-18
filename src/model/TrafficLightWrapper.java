@@ -30,7 +30,6 @@ public class TrafficLightWrapper {
 
     private final List<String> controlledLanes = new ArrayList<>();
     private long lastSwitchTime = 0;
-    private final long MIN_PHASE_DURATION = 5000;
 
     /**
      * Represents a single tl regardless of it being a junction or not
@@ -86,11 +85,11 @@ public class TrafficLightWrapper {
             if (controllerObj == null) return;
 
             Map<String, SumoTLSProgram> programs = null;
-            Class<?> clazz = controllerObj.getClass();
+            Class<?> classx = controllerObj.getClass();
 
             // Try Getter-Method getPrograms
             try {
-                Method getProgramsMethod = clazz.getMethod("getPrograms");
+                Method getProgramsMethod = classx.getMethod("getPrograms");
                 programs = (Map<String, SumoTLSProgram>) getProgramsMethod.invoke(controllerObj);
             } catch (NoSuchMethodException e) {
                 // method not found
@@ -99,7 +98,7 @@ public class TrafficLightWrapper {
             // Try direct field access "programs"
             if (programs == null) {
                 try {
-                    java.lang.reflect.Field programsField = clazz.getField("programs");
+                    java.lang.reflect.Field programsField = classx.getField("programs");
                     programs = (Map<String, SumoTLSProgram>) programsField.get(controllerObj);
                 } catch (NoSuchFieldException e) {
                     log.warning("TLS " + id + ": Logic detection failed (unknown TraaS structure).");
@@ -143,28 +142,17 @@ public class TrafficLightWrapper {
      * Falls back to phase 0 if the total phase count is unknown.
      */
     public void nextPhase() {
-        // attempt to reload logic if phase count is missing
         if (numPhases <= 0) {
             Logic();
         }
-
+        if (numPhases <= 0) {
+            return;
+        }
         try {
-            int nextIndex;
-
-            if (numPhases > 0) {
-                // calculate next phase using modulo to create a loop
-                nextIndex = (currentPhase + 1) % numPhases;
-            } else {
-                // safety fallback: reset to 0 to prevent crashes
-                nextIndex = 0;
-            }
-
+            int nextIndex = (currentPhase + 1) % numPhases;
             conn.do_job_set(Trafficlight.setPhase(id, nextIndex));
             updateData();
-
-            // update timestamp for logic
             this.lastSwitchTime = System.currentTimeMillis();
-
         } catch (Exception e) {
             log.log(Level.SEVERE, "Error switching phase for TLS " + id, e);
         }

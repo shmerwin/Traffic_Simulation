@@ -1,0 +1,239 @@
+\doxysection{controller.\+Simulation\+Controller Class Reference}
+\hypertarget{classcontroller_1_1_simulation_controller}{}\label{classcontroller_1_1_simulation_controller}\index{controller.SimulationController@{controller.SimulationController}}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{classcontroller_1_1_simulation_controller_a761a00f8b8169da334703d516fe71d2a}{Simulation\+Controller}} (String sumo, String config)
+\item 
+void \doxymbox{\hyperlink{classcontroller_1_1_simulation_controller_afa4545c96757f64cbec5d5588e12759c}{set\+View}} (\doxymbox{\hyperlink{classview_1_1_fx_main_frame}{Fx\+Main\+Frame}} view)
+\item 
+void \doxymbox{\hyperlink{classcontroller_1_1_simulation_controller_a074ae81dbfebbfb30853c960bceaeeba}{start\+Connection}} ()  throws \doxymbox{\hyperlink{classcontroller_1_1_simulation_exception}{Simulation\+Exception}} 
+\item 
+void \doxymbox{\hyperlink{classcontroller_1_1_simulation_controller_a5035188f9503d33ae728b1298284abd6}{spawn\+Vehicle}} (String id, String type, String selection, javafx.\+scene.\+paint.\+Color color, double speed)
+\item 
+void \doxymbox{\hyperlink{classcontroller_1_1_simulation_controller_a9ffc2fe0e79d576cf2ca0b9ca2106a28}{start\+Stress\+Test}} (String selected\+Edge, javafx.\+scene.\+paint.\+Color color)
+\item 
+boolean \doxymbox{\hyperlink{classcontroller_1_1_simulation_controller_a89b338570584b7400272bbc457cf188b}{matches\+Filter}} (\doxymbox{\hyperlink{classmodel_1_1_vehicle_wrapper}{Vehicle\+Wrapper}} car)
+\item 
+void \doxymbox{\hyperlink{classcontroller_1_1_simulation_controller_ad5c99143bacf4bfe6fedc2c2a875aa11}{export\+Csv\+Report}} (File file)  throws IOException 
+\item 
+void \doxymbox{\hyperlink{classcontroller_1_1_simulation_controller_af7bff2610f8244a461e4133850b60e30}{export\+Pdf\+Report}} (File file)  throws IOException 
+\item 
+\Hypertarget{classcontroller_1_1_simulation_controller_a72bef7d86d3109b37fbec431872ac07e}\label{classcontroller_1_1_simulation_controller_a72bef7d86d3109b37fbec431872ac07e} 
+void {\bfseries stop} ()
+\item 
+void \doxymbox{\hyperlink{classcontroller_1_1_simulation_controller_a8832504cbbc3cd94c1fe5e80c54fbf2a}{play}} ()  throws \doxymbox{\hyperlink{classcontroller_1_1_simulation_exception}{Simulation\+Exception}} 
+\item 
+void \doxymbox{\hyperlink{classcontroller_1_1_simulation_controller_ab3fdc48e5d8b3f624b284f852f2080bb}{pause}} ()
+\item 
+\Hypertarget{classcontroller_1_1_simulation_controller_a8532547e301a453f07da322609b7853d}\label{classcontroller_1_1_simulation_controller_a8532547e301a453f07da322609b7853d} 
+void {\bfseries set\+Speed\+Multiplier} (int value)
+\item 
+\Hypertarget{classcontroller_1_1_simulation_controller_af197ac0d2ebeb835d5d1b0922fe6a358}\label{classcontroller_1_1_simulation_controller_af197ac0d2ebeb835d5d1b0922fe6a358} 
+List$<$ String $>$ {\bfseries get\+Route\+List} ()
+\item 
+List$<$ String $>$ \doxymbox{\hyperlink{classcontroller_1_1_simulation_controller_a28eb09fe0fbca8b1adc524052855ebea}{get\+Vehicle\+Type\+List}} ()
+\item 
+int\+[$\,$]\+ \doxymbox{\hyperlink{classcontroller_1_1_simulation_controller_a0ce88c0a72025c32ae7abd9d4317e913}{get\+Travel\+Time\+Bins}} ()
+\item 
+int\+[$\,$]\+ \doxymbox{\hyperlink{classcontroller_1_1_simulation_controller_a43a94dbbd989c3c07c9bd4cc4936a5d8}{get\+Edge\+Density\+Bins}} ()
+\item 
+void \doxymbox{\hyperlink{classcontroller_1_1_simulation_controller_a1b855e5b39755a781ae219e235611f77}{set\+Active\+Filter}} (String filter)
+\item 
+\Hypertarget{classcontroller_1_1_simulation_controller_a3fe582f38c4443cf2ce2a7dfa06b5f26}\label{classcontroller_1_1_simulation_controller_a3fe582f38c4443cf2ce2a7dfa06b5f26} 
+String {\bfseries get\+Active\+Filter} ()
+\item 
+void \doxymbox{\hyperlink{classcontroller_1_1_simulation_controller_ace7dfdd86e21dfca7ed81113b473fd16}{set\+Traffic\+Light\+Phase\+Duration}} (String tls\+Id, double seconds)
+\item 
+\Hypertarget{classcontroller_1_1_simulation_controller_a852bee979b4e1f3772da8b377387e3a2}\label{classcontroller_1_1_simulation_controller_a852bee979b4e1f3772da8b377387e3a2} 
+double {\bfseries get\+Map\+Width} ()
+\item 
+\Hypertarget{classcontroller_1_1_simulation_controller_a9a69ba68d745184f3ab2011ffdd6f06c}\label{classcontroller_1_1_simulation_controller_a9a69ba68d745184f3ab2011ffdd6f06c} 
+double {\bfseries get\+Map\+Height} ()
+\item 
+\Hypertarget{classcontroller_1_1_simulation_controller_a8b829130879a6ebfc9a6d807bea7916d}\label{classcontroller_1_1_simulation_controller_a8b829130879a6ebfc9a6d807bea7916d} 
+double {\bfseries get\+Map\+MaxX} ()
+\item 
+\Hypertarget{classcontroller_1_1_simulation_controller_a82853053a8e536669b421eed5c847391}\label{classcontroller_1_1_simulation_controller_a82853053a8e536669b421eed5c847391} 
+double {\bfseries get\+Map\+MinX} ()
+\item 
+\Hypertarget{classcontroller_1_1_simulation_controller_a8c1fc4ba9e894d894594431b66f56273}\label{classcontroller_1_1_simulation_controller_a8c1fc4ba9e894d894594431b66f56273} 
+double {\bfseries get\+Map\+MaxY} ()
+\item 
+\Hypertarget{classcontroller_1_1_simulation_controller_a2ecb04cd59f7ae78a537c71939262381}\label{classcontroller_1_1_simulation_controller_a2ecb04cd59f7ae78a537c71939262381} 
+double {\bfseries get\+Map\+MinY} ()
+\item 
+\Hypertarget{classcontroller_1_1_simulation_controller_ae6e43853f109c25e3c2e0b9c88a8832d}\label{classcontroller_1_1_simulation_controller_ae6e43853f109c25e3c2e0b9c88a8832d} 
+boolean {\bfseries is\+Paused} ()
+\item 
+\Hypertarget{classcontroller_1_1_simulation_controller_aad79368781d286bdfbd01343cc9e883d}\label{classcontroller_1_1_simulation_controller_aad79368781d286bdfbd01343cc9e883d} 
+double {\bfseries get\+Current\+Avg\+Speed} ()
+\item 
+\Hypertarget{classcontroller_1_1_simulation_controller_a1868404ba49e997854df4a8747dc9fb5}\label{classcontroller_1_1_simulation_controller_a1868404ba49e997854df4a8747dc9fb5} 
+List$<$ Double $>$ {\bfseries get\+Speed\+History} ()
+\item 
+\Hypertarget{classcontroller_1_1_simulation_controller_ae2cba846ccd159e5607d2adb4d003943}\label{classcontroller_1_1_simulation_controller_ae2cba846ccd159e5607d2adb4d003943} 
+List$<$ \doxymbox{\hyperlink{classmodel_1_1_edge_wrapper}{Edge\+Wrapper}} $>$ {\bfseries get\+Map\+Edges} ()
+\item 
+\Hypertarget{classcontroller_1_1_simulation_controller_a4479bf530f0f75e0f849ff27ced77ec1}\label{classcontroller_1_1_simulation_controller_a4479bf530f0f75e0f849ff27ced77ec1} 
+Map$<$ String, \doxymbox{\hyperlink{classmodel_1_1_vehicle_wrapper}{Vehicle\+Wrapper}} $>$ {\bfseries get\+Active\+Vehicles} ()
+\item 
+\Hypertarget{classcontroller_1_1_simulation_controller_a582485e3fa2195cc15a2ac7d9d2aed0c}\label{classcontroller_1_1_simulation_controller_a582485e3fa2195cc15a2ac7d9d2aed0c} 
+Map$<$ String, \doxymbox{\hyperlink{classmodel_1_1_traffic_light_wrapper}{Traffic\+Light\+Wrapper}} $>$ {\bfseries get\+Traffic\+Lights} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classcontroller_1_1_simulation_controller_a78dd535cc95979c27e988f348429252e}\label{classcontroller_1_1_simulation_controller_a78dd535cc95979c27e988f348429252e} 
+volatile boolean {\bfseries is\+Paused} = true
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+The core controller of the application. Manages the Tra\+CI connection to SUMO, runs the simulation loop in a separate thread, synchronizes data between the engine and the GUI, and handles user interactions (like spawning vehicles or exporting reports). 
+
+\label{doc-constructors}
+\Hypertarget{classcontroller_1_1_simulation_controller_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{classcontroller_1_1_simulation_controller_a761a00f8b8169da334703d516fe71d2a}\index{controller.SimulationController@{controller.SimulationController}!SimulationController@{SimulationController}}
+\index{SimulationController@{SimulationController}!controller.SimulationController@{controller.SimulationController}}
+\doxysubsubsection{\texorpdfstring{SimulationController()}{SimulationController()}}
+{\footnotesize\ttfamily \label{classcontroller_1_1_simulation_controller_a761a00f8b8169da334703d516fe71d2a} 
+controller.\+Simulation\+Controller.\+Simulation\+Controller (\begin{DoxyParamCaption}\item[{String}]{sumo}{, }\item[{String}]{config}{}\end{DoxyParamCaption})}
+
+Creates the controller instance 
+\begin{DoxyParams}{Parameters}
+{\em sumo} & Path to the SUMO executable (sumo-\/gui or sumo) \\
+\hline
+{\em config} & Path to the .sumocfg configuration file \\
+\hline
+\end{DoxyParams}
+
+
+\label{doc-func-members}
+\Hypertarget{classcontroller_1_1_simulation_controller_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{classcontroller_1_1_simulation_controller_ad5c99143bacf4bfe6fedc2c2a875aa11}\index{controller.SimulationController@{controller.SimulationController}!exportCsvReport@{exportCsvReport}}
+\index{exportCsvReport@{exportCsvReport}!controller.SimulationController@{controller.SimulationController}}
+\doxysubsubsection{\texorpdfstring{exportCsvReport()}{exportCsvReport()}}
+{\footnotesize\ttfamily \label{classcontroller_1_1_simulation_controller_ad5c99143bacf4bfe6fedc2c2a875aa11} 
+void controller.\+Simulation\+Controller.\+export\+Csv\+Report (\begin{DoxyParamCaption}\item[{File}]{file}{}\end{DoxyParamCaption}) throws IOException}
+
+Export a CSV report (one file) containing Summary (key,value) and Speed history (index,avg\+\_\+speed\+\_\+kmh) \Hypertarget{classcontroller_1_1_simulation_controller_af7bff2610f8244a461e4133850b60e30}\index{controller.SimulationController@{controller.SimulationController}!exportPdfReport@{exportPdfReport}}
+\index{exportPdfReport@{exportPdfReport}!controller.SimulationController@{controller.SimulationController}}
+\doxysubsubsection{\texorpdfstring{exportPdfReport()}{exportPdfReport()}}
+{\footnotesize\ttfamily \label{classcontroller_1_1_simulation_controller_af7bff2610f8244a461e4133850b60e30} 
+void controller.\+Simulation\+Controller.\+export\+Pdf\+Report (\begin{DoxyParamCaption}\item[{File}]{file}{}\end{DoxyParamCaption}) throws IOException}
+
+Enables Pdf export by adding the current stats 
+\begin{DoxyParams}{Parameters}
+{\em file} & the file to create \\
+\hline
+\end{DoxyParams}
+
+\begin{DoxyExceptions}{Exceptions}
+{\em IOException} & if the file is null \\
+\hline
+\end{DoxyExceptions}
+\Hypertarget{classcontroller_1_1_simulation_controller_a43a94dbbd989c3c07c9bd4cc4936a5d8}\index{controller.SimulationController@{controller.SimulationController}!getEdgeDensityBins@{getEdgeDensityBins}}
+\index{getEdgeDensityBins@{getEdgeDensityBins}!controller.SimulationController@{controller.SimulationController}}
+\doxysubsubsection{\texorpdfstring{getEdgeDensityBins()}{getEdgeDensityBins()}}
+{\footnotesize\ttfamily \label{classcontroller_1_1_simulation_controller_a43a94dbbd989c3c07c9bd4cc4936a5d8} 
+int\+[$\,$]\+ controller.\+Simulation\+Controller.\+get\+Edge\+Density\+Bins (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Calculates density. Fixed to use drivable edges only. \Hypertarget{classcontroller_1_1_simulation_controller_a0ce88c0a72025c32ae7abd9d4317e913}\index{controller.SimulationController@{controller.SimulationController}!getTravelTimeBins@{getTravelTimeBins}}
+\index{getTravelTimeBins@{getTravelTimeBins}!controller.SimulationController@{controller.SimulationController}}
+\doxysubsubsection{\texorpdfstring{getTravelTimeBins()}{getTravelTimeBins()}}
+{\footnotesize\ttfamily \label{classcontroller_1_1_simulation_controller_a0ce88c0a72025c32ae7abd9d4317e913} 
+int\+[$\,$]\+ controller.\+Simulation\+Controller.\+get\+Travel\+Time\+Bins (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+method to display Travel\+Time\+Chart \Hypertarget{classcontroller_1_1_simulation_controller_a28eb09fe0fbca8b1adc524052855ebea}\index{controller.SimulationController@{controller.SimulationController}!getVehicleTypeList@{getVehicleTypeList}}
+\index{getVehicleTypeList@{getVehicleTypeList}!controller.SimulationController@{controller.SimulationController}}
+\doxysubsubsection{\texorpdfstring{getVehicleTypeList()}{getVehicleTypeList()}}
+{\footnotesize\ttfamily \label{classcontroller_1_1_simulation_controller_a28eb09fe0fbca8b1adc524052855ebea} 
+List$<$ String $>$ controller.\+Simulation\+Controller.\+get\+Vehicle\+Type\+List (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+\begin{DoxyReturn}{Returns}
+A list containing vehicles 
+\end{DoxyReturn}
+\Hypertarget{classcontroller_1_1_simulation_controller_a89b338570584b7400272bbc457cf188b}\index{controller.SimulationController@{controller.SimulationController}!matchesFilter@{matchesFilter}}
+\index{matchesFilter@{matchesFilter}!controller.SimulationController@{controller.SimulationController}}
+\doxysubsubsection{\texorpdfstring{matchesFilter()}{matchesFilter()}}
+{\footnotesize\ttfamily \label{classcontroller_1_1_simulation_controller_a89b338570584b7400272bbc457cf188b} 
+boolean controller.\+Simulation\+Controller.\+matches\+Filter (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{classmodel_1_1_vehicle_wrapper}{Vehicle\+Wrapper}}}]{car}{}\end{DoxyParamCaption})}
+
+Central filter logic used by both GUI and Exports. \Hypertarget{classcontroller_1_1_simulation_controller_ab3fdc48e5d8b3f624b284f852f2080bb}\index{controller.SimulationController@{controller.SimulationController}!pause@{pause}}
+\index{pause@{pause}!controller.SimulationController@{controller.SimulationController}}
+\doxysubsubsection{\texorpdfstring{pause()}{pause()}}
+{\footnotesize\ttfamily \label{classcontroller_1_1_simulation_controller_ab3fdc48e5d8b3f624b284f852f2080bb} 
+void controller.\+Simulation\+Controller.\+pause (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+stop button logic \Hypertarget{classcontroller_1_1_simulation_controller_a8832504cbbc3cd94c1fe5e80c54fbf2a}\index{controller.SimulationController@{controller.SimulationController}!play@{play}}
+\index{play@{play}!controller.SimulationController@{controller.SimulationController}}
+\doxysubsubsection{\texorpdfstring{play()}{play()}}
+{\footnotesize\ttfamily \label{classcontroller_1_1_simulation_controller_a8832504cbbc3cd94c1fe5e80c54fbf2a} 
+void controller.\+Simulation\+Controller.\+play (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) throws \doxymbox{\hyperlink{classcontroller_1_1_simulation_exception}{Simulation\+Exception}}}
+
+play button logic 
+\begin{DoxyExceptions}{Exceptions}
+{\em \doxylink{classcontroller_1_1_simulation_exception}{Simulation\+Exception}} & \\
+\hline
+\end{DoxyExceptions}
+\Hypertarget{classcontroller_1_1_simulation_controller_a1b855e5b39755a781ae219e235611f77}\index{controller.SimulationController@{controller.SimulationController}!setActiveFilter@{setActiveFilter}}
+\index{setActiveFilter@{setActiveFilter}!controller.SimulationController@{controller.SimulationController}}
+\doxysubsubsection{\texorpdfstring{setActiveFilter()}{setActiveFilter()}}
+{\footnotesize\ttfamily \label{classcontroller_1_1_simulation_controller_a1b855e5b39755a781ae219e235611f77} 
+void controller.\+Simulation\+Controller.\+set\+Active\+Filter (\begin{DoxyParamCaption}\item[{String}]{filter}{}\end{DoxyParamCaption})}
+
+Sets the filter for filtering out cars 
+\begin{DoxyParams}{Parameters}
+{\em filter} & the specified filter \\
+\hline
+\end{DoxyParams}
+\Hypertarget{classcontroller_1_1_simulation_controller_ace7dfdd86e21dfca7ed81113b473fd16}\index{controller.SimulationController@{controller.SimulationController}!setTrafficLightPhaseDuration@{setTrafficLightPhaseDuration}}
+\index{setTrafficLightPhaseDuration@{setTrafficLightPhaseDuration}!controller.SimulationController@{controller.SimulationController}}
+\doxysubsubsection{\texorpdfstring{setTrafficLightPhaseDuration()}{setTrafficLightPhaseDuration()}}
+{\footnotesize\ttfamily \label{classcontroller_1_1_simulation_controller_ace7dfdd86e21dfca7ed81113b473fd16} 
+void controller.\+Simulation\+Controller.\+set\+Traffic\+Light\+Phase\+Duration (\begin{DoxyParamCaption}\item[{String}]{tls\+Id}{, }\item[{double}]{seconds}{}\end{DoxyParamCaption})}
+
+Sets the phase duration of a traffic light 
+\begin{DoxyParams}{Parameters}
+{\em tls\+Id} & which traffic light to affect \\
+\hline
+{\em seconds} & how long the traffic light phase is going to be affected \\
+\hline
+\end{DoxyParams}
+\Hypertarget{classcontroller_1_1_simulation_controller_afa4545c96757f64cbec5d5588e12759c}\index{controller.SimulationController@{controller.SimulationController}!setView@{setView}}
+\index{setView@{setView}!controller.SimulationController@{controller.SimulationController}}
+\doxysubsubsection{\texorpdfstring{setView()}{setView()}}
+{\footnotesize\ttfamily \label{classcontroller_1_1_simulation_controller_afa4545c96757f64cbec5d5588e12759c} 
+void controller.\+Simulation\+Controller.\+set\+View (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{classview_1_1_fx_main_frame}{Fx\+Main\+Frame}}}]{view}{}\end{DoxyParamCaption})}
+
+connects the view to the controller 
+\begin{DoxyParams}{Parameters}
+{\em view} & the mainframe \\
+\hline
+\end{DoxyParams}
+\Hypertarget{classcontroller_1_1_simulation_controller_a5035188f9503d33ae728b1298284abd6}\index{controller.SimulationController@{controller.SimulationController}!spawnVehicle@{spawnVehicle}}
+\index{spawnVehicle@{spawnVehicle}!controller.SimulationController@{controller.SimulationController}}
+\doxysubsubsection{\texorpdfstring{spawnVehicle()}{spawnVehicle()}}
+{\footnotesize\ttfamily \label{classcontroller_1_1_simulation_controller_a5035188f9503d33ae728b1298284abd6} 
+void controller.\+Simulation\+Controller.\+spawn\+Vehicle (\begin{DoxyParamCaption}\item[{String}]{id}{, }\item[{String}]{type}{, }\item[{String}]{selection}{, }\item[{javafx.\+scene.\+paint.\+Color}]{color}{, }\item[{double}]{speed}{}\end{DoxyParamCaption})}
+
+adds a new vehicle to sumo safely spawns a thread to avoid blocking the GUI \Hypertarget{classcontroller_1_1_simulation_controller_a074ae81dbfebbfb30853c960bceaeeba}\index{controller.SimulationController@{controller.SimulationController}!startConnection@{startConnection}}
+\index{startConnection@{startConnection}!controller.SimulationController@{controller.SimulationController}}
+\doxysubsubsection{\texorpdfstring{startConnection()}{startConnection()}}
+{\footnotesize\ttfamily \label{classcontroller_1_1_simulation_controller_a074ae81dbfebbfb30853c960bceaeeba} 
+void controller.\+Simulation\+Controller.\+start\+Connection (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) throws \doxymbox{\hyperlink{classcontroller_1_1_simulation_exception}{Simulation\+Exception}}}
+
+Establishes the connection to the SUMO server and initializes the simulation Starts the background thread that drives the simulation loop \Hypertarget{classcontroller_1_1_simulation_controller_a9ffc2fe0e79d576cf2ca0b9ca2106a28}\index{controller.SimulationController@{controller.SimulationController}!startStressTest@{startStressTest}}
+\index{startStressTest@{startStressTest}!controller.SimulationController@{controller.SimulationController}}
+\doxysubsubsection{\texorpdfstring{startStressTest()}{startStressTest()}}
+{\footnotesize\ttfamily \label{classcontroller_1_1_simulation_controller_a9ffc2fe0e79d576cf2ca0b9ca2106a28} 
+void controller.\+Simulation\+Controller.\+start\+Stress\+Test (\begin{DoxyParamCaption}\item[{String}]{selected\+Edge}{, }\item[{javafx.\+scene.\+paint.\+Color}]{color}{}\end{DoxyParamCaption})}
+
+Starts a stress test by spawning 50 vehicles. Uses a single thread for the batch to minimize overhead. 
+
+The documentation for this class was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+src/\+controller/\+Simulation\+Controller.\+java\end{DoxyCompactItemize}
